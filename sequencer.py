@@ -32,7 +32,8 @@ class Pattern(object):
         if callable_ in self.observers: del self.observers[callable_]
 
     def notifyPatternChange(self):
-        for observer in self.observers:
+        observers = list(self.observers.keys())
+        for observer in observers:
             observer.onPatternChange(self.track.trackIndex, self.patternIndex)
 
     def getNoteColumns(self):
@@ -193,11 +194,13 @@ class Track(object):
 
     def notifyPlayHeadChange(self):
         if self.playHead.patternIndex != self.playHeadPrev.patternIndex or self.playHead.patternRow != self.playHeadPrev.patternRow:
-            for observer in self.observers:
+            observers = list(self.observers.keys())
+            for observer in observers:
                 observer.onPlayHeadChange(self.playHeadPrev, self.playHead)
 
     def notifyTrackStatusChange(self):
-        for observer in self.observers:
+        observers = list(self.observers.keys())
+        for observer in observers:
             observer.onTrackStatusChange(self.trackIndex, self.volume, self.muted, self.isActive())
 
     def setVolume(self, volume):
@@ -242,7 +245,8 @@ class Song(object):
         if callable_ in self.observers: del self.observers[callable_]
 
     def notifySongChange(self):
-        for observer in self.observers:
+        observers = list(self.observers.keys())
+        for observer in observers:
             observer.onSongChange()
 
     def get(self, row, col):
@@ -394,7 +398,18 @@ class PatternEditController(PatternController):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
 
     def onTrackStatusChange(self, trackIndex, volume, muted, active):
-        pass
+        debug('PatternEditController.onTrackStatusChange({trackIndex}, {volume}, {muted}, {active})', **locals())
+        if active == False:
+            self.track.removeObserver(self)
+            self.pattern.removeObserver(self)
+            self.trackIndex = self.io.song.activeTrack.trackIndex
+            self.track = self.io.song.tracks[self.trackIndex]
+            self.patternIndex = 0
+            self.pattern = self.track.patterns[self.patternIndex]
+            self.scroll = [0, 0]
+            self.track.addObserver(self)
+            self.pattern.addObserver(self)
+            self.update()
 
     def onPlayHeadChange(self, old, new):
         if self.patternIndex in (old.patternIndex, new.patternIndex):
@@ -566,8 +581,10 @@ class TracksController(LKController):
             self.update()
 
     def update(self):
+        debug('TracksController.update() called')
         for trackIndex in range(8):
-            self.sendCommand(['setled', 0, trackIndex, 0, 3 * int(self.io.song.activeTrack.trackIndex == trackIndex)])
+            c = [0,3] if self.io.song.activeTrack.trackIndex == trackIndex else [0,0]
+            self.sendCommand(['setled', 0, trackIndex] + c)
 
     def onPadPress(self, row, col, velocity):
         if row == 0 and col < 8:
