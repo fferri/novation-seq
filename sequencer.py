@@ -9,7 +9,7 @@ import json
 import weakref
 
 def debug(s, *args, **kwargs):
-    pass#print('Seq: {}'.format(s.format(*args, **kwargs)))
+    print('Seq: {}'.format(s.format(*args, **kwargs)))
 
 class Pattern(object):
     def __init__(self, track, patternIndex, length=16):
@@ -175,12 +175,15 @@ class PlayHead(object):
         self.patternRow = playHead.patternRow
 
 class Track(object):
-    def __init__(self, trackIndex):
+    def __init__(self, song, trackIndex):
+        self.song = song
         self.trackIndex = trackIndex
         self.patterns = [Pattern(self, patternIndex) for patternIndex in range(64)]
         self.playHead = PlayHead()
         self.playHeadPrev = PlayHead()
         self.observers = weakref.WeakKeyDictionary()
+        self.volume = 100
+        self.muted = False
 
     def addObserver(self, callable_):
         self.observers[callable_] = 1
@@ -193,9 +196,36 @@ class Track(object):
             for observer in self.observers:
                 observer.onPlayHeadChange(self.playHeadPrev, self.playHead)
 
+    def notifyTrackStatusChange(self):
+        for observer in self.observers:
+            observer.onTrackStatusChange(self.trackIndex, self.volume, self.muted, self.isActive())
+
+    def setVolume(self, volume):
+        volume = max(0, min(127, int(volume)))
+        if self.volume != volume:
+            self.volume = volume
+            self.notifyVolumeChange()
+
+    def setMute(self, mute):
+        mute = bool(mute)
+        if mute != self.muted:
+            self.muted = bool(mute)
+            self.notifyTrackStatusChange()
+
+    def isActive(self):
+        return self.song.activeTrack == self
+
+    def activate(self):
+        if self.song.activeTrack != self:
+            prevActiveTrack = self.song.activeTrack
+            self.song.activeTrack = self
+            prevActiveTrack.notifyTrackStatusChange()
+            self.notifyTrackStatusChange()
+
 class Song(object):
     def __init__(self, numTracks=8, defaultRowDuration=16):
         self.tracks = [Track(trackIndex) for trackIndex in range(numTracks)]
+        self.activeTrack = self.tracks[0]
         self.rowDuration = defaultdict(lambda: defaultRowDuration)
         self.currentRow = 0
         self.currentTick = 0
@@ -292,47 +322,60 @@ class Song(object):
                 d.append(pattern.dump())
         return '\n'.join(d)
 
-class Controller(object):
+class LPController(object):
     def __init__(self, io):
         self.io = io
+
+    def sendCommand(self, cmd):
+        self.io.sendLaunchpadCommand(cmd)
 
     def update(self):
         pass
 
     def onPatternChange(self, trackIndex, patternIndex):
-        debug('Controller.onPatternChange({trackIndex}, {patternIndex})', **locals())
+        debug('LPController.onPatternChange({trackIndex}, {patternIndex})', **locals())
 
-    def onLaunchpadButtonPress(self, buf, section, row, col):
-        debug('Controller.onLaunchpadButtonPress({buf}, {section}, {row}, {col})', **locals())
+    def onButtonPress(self, buf, section, row, col):
+        debug('LPController.onButtonPress({buf}, {section}, {row}, {col})', **locals())
 
-    def onLaunchpadButtonRelease(self, buf, section, row, col):
-        debug('Controller.onLaunchpadButtonRelease({buf}, {section}, {row}, {col})', **locals())
+    def onButtonRelease(self, buf, section, row, col):
+        debug('LPController.onButtonRelease({buf}, {section}, {row}, {col})', **locals())
 
-    def onLaunchkeyButtonPress(self, buttonName):
-        debug('Controller.onLaunchkeyButtonPress({buttonName})', **locals())
+class LKController(object):
+    def __init__(self, io):
+        self.io = io
 
-    def onLaunchkeyButtonRelease(self, buttonName):
-        debug('Controller.onLaunchkeyButtonRelease({buttonName})', **locals())
+    def sendCommand(self, cmd):
+        self.io.sendLaunchkeyCommand(cmd)
 
-    def onLaunchkeyNoteOn(self, note, velocity):
-        debug('Controller.onLaunchkeyNoteOn({note}, {velocity})', **locals())
+    def update(self):
+        pass
 
-    def onLaunchkeyNoteOff(self, note):
-        debug('Controller.onLaunchkeyNoteOff({note})', **locals())
+    def onButtonPress(self, buttonName):
+        debug('LKController.onButtonPress({buttonName})', **locals())
 
-    def onLaunchkeyPadPress(self, row, col, velocity):
-        debug('Controller.onLaunchkeyPadPress({row}, {col}, {velocity})', **locals())
+    def onButtonRelease(self, buttonName):
+        debug('LKController.onButtonRelease({buttonName})', **locals())
 
-    def onLaunchkeyPadRelease(self, row, col, velocity):
-        debug('Controller.onLaunchkeyPadRelease({row}, {col}, {velocity})', **locals())
+    def onNoteOn(self, note, velocity):
+        debug('LKController.onNoteOn({note}, {velocity})', **locals())
 
-    def onLaunchkeyControlChange(self, num, value):
-        debug('Controller.onLaunchkeyControlChange({num}, {value})', **locals())
+    def onNoteOff(self, note):
+        debug('LKController.onNoteOff({note})', **locals())
 
-class PatternController(Controller):
+    def onPadPress(self, row, col, velocity):
+        debug('LKController.onPadPress({row}, {col}, {velocity})', **locals())
+
+    def onPadRelease(self, row, col, velocity):
+        debug('LKController.onPadRelease({row}, {col}, {velocity})', **locals())
+
+    def onControlChange(self, num, value):
+        debug('LKController.onControlChange({num}, {value})', **locals())
+
+class PatternController(LPController):
     def onPatternChange(self, trackIndex, patternIndex):
         debug('PatternController.onPatternChange({trackIndex}, {patternIndex})', **locals())
-        if self.io.controller == self and self.trackIndex == trackIndex and self.patternIndex == patternIndex:
+        if self.io.lpcontroller == self and self.trackIndex == trackIndex and self.patternIndex == patternIndex:
             self.update()
 
 class PatternEditController(PatternController):
@@ -350,30 +393,33 @@ class PatternEditController(PatternController):
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
 
+    def onTrackStatusChange(self, trackIndex, volume, muted, active):
+        pass
+
     def onPlayHeadChange(self, old, new):
         if self.patternIndex in (old.patternIndex, new.patternIndex):
             self.update()
 
     def update(self):
         debug('PatternEditController.update()')
-        self.io.sendLaunchpadCommand(['clearb', 'default'])
+        self.sendCommand(['clearb', 'default'])
 
         if self.track.playHead.patternIndex == self.patternIndex:
             for row in range(128):
-                self.io.sendLaunchpadCommand(['setb', 'default', 'center', row, self.track.playHead.patternRow, 1, 0])
+                self.sendCommand(['setb', 'default', 'center', row, self.track.playHead.patternRow, 1, 0])
 
         for note, intervals in self.pattern.noteGetIntervals().items():
             for (rowStart, rowStop) in intervals:
-                self.io.sendLaunchpadCommand(['setb', 'default', 'center', note, rowStart, 2, 3])
+                self.sendCommand(['setb', 'default', 'center', note, rowStart, 2, 3])
                 for row in range(rowStart + 1, rowStop):
-                    self.io.sendLaunchpadCommand(['setb', 'default', 'center', note, row, 0, 1])
+                    self.sendCommand(['setb', 'default', 'center', note, row, 0, 1])
                 if self.renderNoteOffs:
-                    self.io.sendLaunchpadCommand(['setb', 'default', 'center', note, rowStop, 1, 0])
+                    self.sendCommand(['setb', 'default', 'center', note, rowStop, 1, 0])
 
-        self.io.sendLaunchpadCommand(['sync', 'default'])
+        self.sendCommand(['sync', 'default'])
 
-    def onLaunchpadButtonPress(self, buf, section, row, col):
-        super(PatternEditController, self).onLaunchpadButtonPress(buf, section, row, col)
+    def onButtonPress(self, buf, section, row, col):
+        super(PatternEditController, self).onButtonPress(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
@@ -382,15 +428,15 @@ class PatternEditController(PatternController):
             patternRow = col
             note = row
             if self.pattern.noteGetLength(patternRow, note) is not None:
-                self.io.setController(PatternEditNoteController(self, patternRow, note))
+                self.io.setLPController(PatternEditNoteController(self, patternRow, note))
             elif not self.pattern.noteIsPlayingAt(patternRow, note):
-                self.io.setController(PatternAddNoteController(self, patternRow, note))
+                self.io.setLPController(PatternAddNoteController(self, patternRow, note))
         elif section == 'top':
             self.scroll[0] += int(col == 1) - int(col == 0)
             self.scroll[1] += int(col == 3) - int(col == 2)
             self.scroll[0] = max(0, min(127, self.scroll[0]))
             self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
-            self.io.sendLaunchpadCommand(['scroll', 'default', 'center'] + self.scroll)
+            self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
 
 class PatternAddNoteController(PatternController):
     def __init__(self, parent, patternRow, note):
@@ -412,11 +458,11 @@ class PatternAddNoteController(PatternController):
         self.parent.update()
         debug('PatternAddNoteController.update()')
         for c in range(self.length):
-            self.io.sendLaunchpadCommand(['setb', 'default', 'center', self.note, self.patternRow + c, 3, 0])
-        self.io.sendLaunchpadCommand(['sync', 'default'])
+            self.sendCommand(['setb', 'default', 'center', self.note, self.patternRow + c, 3, 0])
+        self.sendCommand(['sync', 'default'])
 
-    def onLaunchpadButtonPress(self, buf, section, row, col):
-        super(PatternAddNoteController, self).onLaunchpadButtonPress(buf, section, row, col)
+    def onButtonPress(self, buf, section, row, col):
+        super(PatternAddNoteController, self).onButtonPress(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
@@ -429,8 +475,8 @@ class PatternAddNoteController(PatternController):
                     self.update()
                 return
 
-    def onLaunchpadButtonRelease(self, buf, section, row, col):
-        super(PatternAddNoteController, self).onLaunchpadButtonRelease(buf, section, row, col)
+    def onButtonRelease(self, buf, section, row, col):
+        super(PatternAddNoteController, self).onButtonRelease(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
@@ -438,7 +484,7 @@ class PatternAddNoteController(PatternController):
         if section == 'center':
             if row == self.note and col == self.patternRow:
                 self.pattern.noteAdd(self.patternRow, self.note, self.length)
-                self.io.setController(self.parent)
+                self.io.setLPController(self.parent)
                 return
             if row == self.note and col > self.patternRow:
                 self.length = 1
@@ -467,11 +513,11 @@ class PatternEditNoteController(PatternController):
         self.parent.update()
         debug('PatternEditNoteController.update()')
         for c in range(self.length):
-            self.io.sendLaunchpadCommand(['setb', 'default', 'center', self.note, self.patternRow + c, 3, 0])
-        self.io.sendLaunchpadCommand(['sync', 'default'])
+            self.sendCommand(['setb', 'default', 'center', self.note, self.patternRow + c, 3, 0])
+        self.sendCommand(['sync', 'default'])
 
-    def onLaunchpadButtonPress(self, buf, section, row, col):
-        super(PatternEditNoteController, self).onLaunchpadButtonPress(buf, section, row, col)
+    def onButtonPress(self, buf, section, row, col):
+        super(PatternEditNoteController, self).onButtonPress(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
@@ -485,8 +531,8 @@ class PatternEditNoteController(PatternController):
                     self.update()
                 return
 
-    def onLaunchpadButtonRelease(self, buf, section, row, col):
-        super(PatternEditNoteController, self).onLaunchpadButtonRelease(buf, section, row, col)
+    def onButtonRelease(self, buf, section, row, col):
+        super(PatternEditNoteController, self).onButtonRelease(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
@@ -500,7 +546,7 @@ class PatternEditNoteController(PatternController):
                     debug('resize selected note {} at row {} to length {}', self.note, self.patternRow, self.length)
                     self.pattern.noteDelete(self.patternRow, self.note)
                     self.pattern.noteAdd(self.patternRow, self.note, self.length)
-                self.io.setController(self.parent)
+                self.io.setLPController(self.parent)
                 return
             if row == self.note and col > self.patternRow:
                 self.length = 1
@@ -508,21 +554,50 @@ class PatternEditNoteController(PatternController):
                 self.update()
                 return
 
+class TracksController(LKController):
+    def __init__(self, io):
+        self.io = io
+        for track in self.io.song.tracks:
+            track.addObserver(self)
+
+    def onTrackStatusChange(self, trackIndex, volume, muted, isActive):
+        if isActive == True: # call update only once!
+            debug('TracksController.onTrackStatusChange: track {trackIndex} is now active', **locals())
+            self.update()
+
+    def update(self):
+        for trackIndex in range(8):
+            self.sendCommand(['setled', 0, trackIndex, 0, 3 * int(self.io.song.activeTrack.trackIndex == trackIndex)])
+
+    def onPadPress(self, row, col, velocity):
+        if row == 0 and col < 8:
+            self.io.song.track[col].activate()
+
+    def onControlChange(self, num, value):
+        self.io.song.tracks[num].setVolume(value)
+
 class IO(pyext._class):
     _inlets = 3
     _outlets = 3
 
     def __init__(self):
         self.song = Song()
-        self.controller = PatternEditController(self, 0, 0)
+        self.lpcontroller = PatternEditController(self, 0, 0)
+        self.lkcontroller = TracksController(self)
 
     def _init(self):
-        self.controller.update()
+        self.lpcontroller.update()
+        self.lkcontroller.update()
 
-    def setController(self, c):
-        debug('Controller changes to %s' % c)
-        self.controller = c
-        self.controller.update()
+    def setLPController(self, c):
+        debug('LPController changes to %s' % c)
+        self.lpcontroller = c
+        self.lpcontroller.update()
+
+    def setLKController(self, c):
+        debug('LKController changes to %s' % c)
+        self.lkcontroller = c
+        self.lkcontroller.update()
 
     def getrowduration_1(self, row):
         self._outlet(1, ['rowduration', row, self.song.getRowDuration(row)])
@@ -601,30 +676,30 @@ class IO(pyext._class):
 
     def buffer_2(self, buf, section, btnCmd, row, col, pressed):
         if pressed:
-            self.controller.onLaunchpadButtonPress(buf, section, row, col)
+            self.lpcontroller.onButtonPress(buf, section, row, col)
         else:
-            self.controller.onLaunchpadButtonRelease(buf, section, row, col)
+            self.lpcontroller.onButtonRelease(buf, section, row, col)
 
     def note_3(self, note, velocity):
         if velocity > 0:
-            self.controller.onLaunchkeyNoteOn(note, velocity)
+            self.lkcontroller.onNoteOn(note, velocity)
         else:
-            self.controller.onLaunchkeyNoteOff(note)
+            self.lkcontroller.onNoteOff(note)
 
     def control_3(self, num, value):
-        self.controller.onLaunchkeyControlChange(num, value)
+        self.lkcontroller.onControlChange(num, value)
 
     def pad_3(self, row, col, velocity):
         if velocity > 0:
-            self.controller.onLaunchkeyPadPress(row, col, velocity)
+            self.lkcontroller.onPadPress(row, col, velocity)
         else:
-            self.controller.onLaunchkeyPadRelease(row, col, velocity)
+            self.lkcontroller.onPadRelease(row, col, velocity)
 
     def button_3(self, name, pressed):
         if pressed:
-            self.controller.onLaunchkeyButtonPress(name)
+            self.lkcontroller.onButtonPress(name)
         else:
-            self.controller.onLaunchkeyButtonRelease(name)
+            self.lkcontroller.onButtonRelease(name)
 
     def sendLaunchpadCommand(self, l):
         self._outlet(2, l)
