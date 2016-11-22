@@ -1,0 +1,14 @@
+#N canvas 438 291 450 300 10;
+#X obj 85 97 pyext sequencer IO;
+#X obj 86 36 inlet;
+#X obj 140 35 inlet;
+#X obj 188 35 inlet;
+#X obj 84 145 outlet;
+#X obj 134 147 outlet;
+#X obj 191 145 outlet;
+#X connect 0 0 4 0;
+#X connect 0 1 5 0;
+#X connect 0 2 6 0;
+#X connect 1 0 0 1;
+#X connect 2 0 0 2;
+#X connect 3 0 0 3;

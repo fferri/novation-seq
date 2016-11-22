@@ -1,0 +1,30 @@
+#N canvas 126 283 532 455 10;
+#X msg 46 74 setled 0 0 \$1 \$2;
+#X msg 46 38 0 3;
+#X msg 85 38 3 0;
+#X msg 127 38 3 3;
+#X msg 171 38 1 3;
+#X msg 211 38 3 1;
+#X msg 79 128 reset;
+#X obj 131 127 hsl 128 15 0 8 0 0 empty empty empty -2 -8 0 10 -262144
+-1 -1 4700 1;
+#X obj 128 147 int;
+#X obj 54 314 print launchkey;
+#X obj 48 252 launchkey 2 3;
+#X msg 267 74 extendedmode \$1;
+#X obj 267 49 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 1
+1;
+#X msg 128 171 reset \, setled 1 \$1 3 0;
+#X connect 0 0 10 0;
+#X connect 1 0 0 0;
+#X connect 2 0 0 0;
+#X connect 3 0 0 0;
+#X connect 4 0 0 0;
+#X connect 5 0 0 0;
+#X connect 6 0 10 0;
+#X connect 7 0 8 0;
+#X connect 8 0 13 0;
+#X connect 10 0 9 0;
+#X connect 11 0 10 0;
+#X connect 12 0 11 0;
+#X connect 13 0 10 0;
