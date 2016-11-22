@@ -204,7 +204,7 @@ class Track(object):
         volume = max(0, min(127, int(volume)))
         if self.volume != volume:
             self.volume = volume
-            self.notifyVolumeChange()
+            self.notifyTrackStatusChange()
 
     def setMute(self, mute):
         mute = bool(mute)
@@ -224,7 +224,7 @@ class Track(object):
 
 class Song(object):
     def __init__(self, numTracks=8, defaultRowDuration=16):
-        self.tracks = [Track(trackIndex) for trackIndex in range(numTracks)]
+        self.tracks = [Track(self, trackIndex) for trackIndex in range(numTracks)]
         self.activeTrack = self.tracks[0]
         self.rowDuration = defaultdict(lambda: defaultRowDuration)
         self.currentRow = 0
@@ -571,7 +571,7 @@ class TracksController(LKController):
 
     def onPadPress(self, row, col, velocity):
         if row == 0 and col < 8:
-            self.io.song.track[col].activate()
+            self.io.song.tracks[col].activate()
 
     def onControlChange(self, num, value):
         self.io.song.tracks[num].setVolume(value)
