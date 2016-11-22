@@ -19,7 +19,8 @@
 #X obj 160 28 midiin;
 #X obj 85 28 midiin;
 #X obj 129 207 route list;
-#X connect 0 0 1 1;
+#X obj 43 142 route list;
+#X connect 0 0 20 0;
 #X connect 1 0 8 0;
 #X connect 1 1 9 0;
 #X connect 1 2 19 0;
@@ -41,3 +42,5 @@
 #X connect 18 1 14 0;
 #X connect 19 0 2 0;
 #X connect 19 1 2 0;
+#X connect 20 0 1 1;
+#X connect 20 1 1 1;
