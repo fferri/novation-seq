@@ -73,9 +73,9 @@ class LaunchpadPdImpl(Launchpad):
         self.midiBuffer = []
 
     def writeMidi(self, v1, v2, v3):
-        self.pdobj._outlet(1, v1)
-        self.pdobj._outlet(1, v2)
-        self.pdobj._outlet(1, v3)
+        self.pdobj._outlet(1, ['midi', v1])
+        self.pdobj._outlet(1, ['midi', v2])
+        self.pdobj._outlet(1, ['midi', v3])
 
     def bufferMidi(self, f):
         if f & 0x80: # status bit
@@ -87,11 +87,11 @@ class LaunchpadPdImpl(Launchpad):
             self.midiBuffer = []
 
     def onButtonEvent(self, row, col, pressed):
-        self.pdobj._outlet(2, ['button', row, col, int(pressed)])
+        self.pdobj._outlet(1, ['button', row, col, int(pressed)])
     
 class LaunchpadPd(pyext._class):
     _inlets = 1
-    _outlets = 2
+    _outlets = 1
 
     def __init__(self):
         self.launchpad = LaunchpadPdImpl(self)

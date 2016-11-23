@@ -78,11 +78,13 @@ class LaunchkeyPdImpl(Launchkey):
 
     def writeMidi(self, port, v1, v2, v3):
         if port == 0:
-            pass
+            self.pdobj._outlet(1, ['midi', v1])
+            self.pdobj._outlet(1, ['midi', v2])
+            self.pdobj._outlet(1, ['midi', v3])
         elif port == 1:
-            self.pdobj._outlet(2, v1)
-            self.pdobj._outlet(2, v2)
-            self.pdobj._outlet(2, v3)
+            self.pdobj._outlet(1, ['cmidi', v1])
+            self.pdobj._outlet(1, ['cmidi', v2])
+            self.pdobj._outlet(1, ['cmidi', v3])
 
     def bufferMidi(self, port, f):
         if f & 0x80: # status bit
@@ -94,20 +96,20 @@ class LaunchkeyPdImpl(Launchkey):
             self.midiBuffer[port] = []
 
     def onNoteEvent(self, note, velocity):
-        self.pdobj._outlet(3, ['note', note, velocity])
+        self.pdobj._outlet(1, ['note', note, velocity])
 
     def onPadEvent(self, row, col, velocity):
-        self.pdobj._outlet(3, ['pad', row, col, velocity])
+        self.pdobj._outlet(1, ['pad', row, col, velocity])
 
     def onControlEvent(self, num, value):
-        self.pdobj._outlet(3, ['control', num, value])
+        self.pdobj._outlet(1, ['control', num, value])
 
     def onButtonEvent(self, name, pressed):
-        self.pdobj._outlet(3, ['button', name, pressed])
+        self.pdobj._outlet(1, ['button', name, pressed])
 
 class LaunchkeyPd(pyext._class):
     _inlets = 1
-    _outlets = 3
+    _outlets = 1
 
     def __init__(self, *args):
         self.launchkey = LaunchkeyPdImpl(self)
