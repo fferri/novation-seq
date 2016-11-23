@@ -1,6 +1,8 @@
-from sequencer import *
+#import sequencer
+from sequencer.model import *
 
-t = Track(0)
+s = Song()
+t = Track(s, 0)
 p = t.patterns[0]
 p.setLength(8)
 p.setNoteColumns([0,1,2])
