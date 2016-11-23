@@ -339,11 +339,11 @@ class LPController(object):
     def onPatternChange(self, trackIndex, patternIndex):
         debug('LPController.onPatternChange({trackIndex}, {patternIndex})', **locals())
 
-    def onButtonPress(self, buf, section, row, col):
-        debug('LPController.onButtonPress({buf}, {section}, {row}, {col})', **locals())
+    def onLPButtonPress(self, buf, section, row, col):
+        debug('LPController.onLPButtonPress({buf}, {section}, {row}, {col})', **locals())
 
-    def onButtonRelease(self, buf, section, row, col):
-        debug('LPController.onButtonRelease({buf}, {section}, {row}, {col})', **locals())
+    def onLPButtonRelease(self, buf, section, row, col):
+        debug('LPController.onLPButtonRelease({buf}, {section}, {row}, {col})', **locals())
 
 class LKController(object):
     def __init__(self, io):
@@ -434,8 +434,8 @@ class PatternEditController(PatternController):
         if sync:
             self.sendCommand(['sync', 'default'])
 
-    def onButtonPress(self, buf, section, row, col):
-        super(PatternEditController, self).onButtonPress(buf, section, row, col)
+    def onLPButtonPress(self, buf, section, row, col):
+        super(PatternEditController, self).onLPButtonPress(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
@@ -478,8 +478,8 @@ class PatternAddNoteController(PatternController):
         if sync:
             self.sendCommand(['sync', 'default'])
 
-    def onButtonPress(self, buf, section, row, col):
-        super(PatternAddNoteController, self).onButtonPress(buf, section, row, col)
+    def onLPButtonPress(self, buf, section, row, col):
+        super(PatternAddNoteController, self).onLPButtonPress(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
@@ -492,8 +492,8 @@ class PatternAddNoteController(PatternController):
                     self.update()
                 return
 
-    def onButtonRelease(self, buf, section, row, col):
-        super(PatternAddNoteController, self).onButtonRelease(buf, section, row, col)
+    def onLPButtonRelease(self, buf, section, row, col):
+        super(PatternAddNoteController, self).onLPButtonRelease(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
@@ -534,8 +534,8 @@ class PatternEditNoteController(PatternController):
         if sync:
             self.sendCommand(['sync', 'default'])
 
-    def onButtonPress(self, buf, section, row, col):
-        super(PatternEditNoteController, self).onButtonPress(buf, section, row, col)
+    def onLPButtonPress(self, buf, section, row, col):
+        super(PatternEditNoteController, self).onLPButtonPress(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
@@ -549,8 +549,8 @@ class PatternEditNoteController(PatternController):
                     self.update()
                 return
 
-    def onButtonRelease(self, buf, section, row, col):
-        super(PatternEditNoteController, self).onButtonRelease(buf, section, row, col)
+    def onLPButtonRelease(self, buf, section, row, col):
+        super(PatternEditNoteController, self).onLPButtonRelease(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
@@ -704,9 +704,9 @@ class IO(pyext._class):
 
     def buffer_2(self, buf, section, btnCmd, row, col, pressed):
         if pressed:
-            self.lpcontroller.onButtonPress(buf, section, row, col)
+            self.lpcontroller.onLPButtonPress(buf, section, row, col)
         else:
-            self.lpcontroller.onButtonRelease(buf, section, row, col)
+            self.lpcontroller.onLPButtonRelease(buf, section, row, col)
 
     def note_3(self, note, velocity):
         if velocity > 0:
