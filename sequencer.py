@@ -451,12 +451,17 @@ class PatternEditController(PatternController):
                 self.io.setLPController(PatternEditNoteController(self, patternRow, note))
             elif not self.pattern.noteIsPlayingAt(patternRow, note):
                 self.io.setLPController(PatternAddNoteController(self, patternRow, note))
-        elif section == 'top':
-            self.scroll[0] += int(col == 1) - int(col == 0)
-            self.scroll[1] += int(col == 3) - int(col == 2)
-            self.scroll[0] = max(0, min(127, self.scroll[0]))
-            self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
-            self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
+        elif section == 'top' and row == 8:
+            if col in range(4):
+                self.scroll[0] += int(col == 1) - int(col == 0)
+                self.scroll[1] += int(col == 3) - int(col == 2)
+                self.scroll[0] = max(0, min(127, self.scroll[0]))
+                self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
+                self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
+                return
+            if col == 7:
+                self.io.setLPController(PatternFunctionsController(self))
+                return
 
 class PatternAddNoteController(PatternController):
     def __init__(self, parent, patternRow, note):
@@ -575,6 +580,44 @@ class PatternEditNoteController(PatternController):
                 self.deleteOnRelease = False
                 self.update()
                 return
+
+class PatternFunctionsController(PatternController):
+    def __init__(self, parent):
+        self.parent = parent
+        self.io = parent.io
+        self.trackIndex = parent.trackIndex
+        self.track = self.io.song.tracks[self.trackIndex]
+        self.patternIndex = parent.patternIndex
+        self.pattern = self.track.patterns[self.patternIndex]
+	self.pattern.addObserver(self)
+
+    def __str__(self):
+        return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
+
+    def update(self, sync=True):
+        self.parent.update(sync=False)
+        debug('PatternFunctionsController.update()')
+        self.sendCommand(['setb', 'default', 'top', 8, 7, 2, 2])
+        self.sendCommand(['setb', 'default', 'right', 0, 8, 0, 3])
+        self.sendCommand(['setb', 'default', 'right', 1, 8, 0, 3])
+        if sync:
+            self.sendCommand(['sync', 'default'])
+
+    def onLPButtonPress(self, buf, section, row, col):
+        super(PatternFunctionsController, self).onLPButtonPress(buf, section, row, col)
+
+    def onLPButtonRelease(self, buf, section, row, col):
+        super(PatternFunctionsController, self).onLPButtonRelease(buf, section, row, col)
+        buf = str(buf)
+        section = str(section)
+        if buf != 'default':
+            return
+        if section == 'top' and row == 8:
+            if col == 7:
+                self.io.setLPController(self.parent)
+                return
+        if section == 'right' and col == 8:
+            pass
 
 class TracksController(LKController):
     def __init__(self, io):
