@@ -259,6 +259,7 @@ class Song(object):
         self.rowDuration = defaultdict(lambda: defaultRowDuration)
         self.currentRow = 0
         self.currentTick = 0
+        self.lastOutputRow = None
         self.playHeads = {}
         self.playHeadsPrev = {}
         self.length = 1
@@ -275,6 +276,11 @@ class Song(object):
         observers = list(self.observers.keys())
         for observer in observers:
             observer.onSongChange()
+
+    def notifyCurrentRowChange(self):
+        observers = list(self.observers.keys())
+        for observer in observers:
+            observer.onCurrentRowChange(self.currentRow)
 
     def get(self, row, col):
         return self.data[row][col]
@@ -342,7 +348,10 @@ class Song(object):
                 if track.playHead.patternRow != track.playHeadPrev.patternRow:
                     output[trackIndex] = pattern.getRow(track.playHead.patternRow)
             track.notifyPlayHeadChange()
+        if self.lastOutputRow != self.currentRow:
+            self.notifyCurrentRowChange()
         ret = (self.currentRow, self.currentTick, output)
+        self.lastOutputRow = self.currentRow
         self.incrTick()
         return ret
 
@@ -492,9 +501,13 @@ class PatternEditController(PatternController):
                 self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
                 self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
                 return
+            if col == 4:
+                self.io.setLPController(SongEditController(self))
+                return
             if col == 5:
                 cb = lambda trkIdx, patIdx: self.selectPattern(trkIdx, patIdx, True)
-                self.io.setLPController(PatternSelectController(self, self.trackIndex, cb))
+                v = self.track.lastSelectedPatternIndex
+                self.io.setLPController(PatternSelectController(self, self.trackIndex, cb, v, False))
                 return
             if col == 7:
                 self.io.setLPController(PatternFunctionsController(self))
@@ -619,12 +632,14 @@ class PatternEditNoteController(PatternController):
                 return
 
 class PatternSelectController(LPController):
-    def __init__(self, parent, trackIndex, callback, listenToTrackStatusChange=True):
+    def __init__(self, parent, trackIndex, callback, currentPatternIndex, allowNullSelection, listenToTrackStatusChange=True):
         self.parent = parent
         self.io = self.parent.io
         self.trackIndex = trackIndex
         self.track = self.io.song.tracks[self.trackIndex]
         self.callback = callback
+        self.currentPatternIndex = currentPatternIndex
+        self.allowNullSelection = allowNullSelection
         if listenToTrackStatusChange:
             for track in self.io.song.tracks:
                 track.addObserver(self)
@@ -654,10 +669,12 @@ class PatternSelectController(LPController):
             row, col = patternIndex / 8, patternIndex % 8
             pattern = self.track.patterns[patternIndex]
             empty = pattern.isEmpty()
-            cur = patternIndex == self.track.lastSelectedPatternIndex
+            #cur = patternIndex == self.track.lastSelectedPatternIndex
+            cur = patternIndex == self.currentPatternIndex
             color = [2, 0] if cur else [0, 1] if empty else [2, 3]
             self.sendCommand(['setb', 'default', 'center', row, col] + color)
-        self.sendCommand(['setb', 'default', 'right', 7, 8, 3, 0])
+        if self.allowNullSelection:
+            self.sendCommand(['setb', 'default', 'right', 7, 8, 3, 0])
         if sync:
             self.sendCommand(['sync', 'default'])
 
@@ -684,6 +701,10 @@ class PatternSelectController(LPController):
             if col == 5:
                 self.io.setLPController(self.parent)
                 return
+        elif section == 'right' and col == 8:
+            if row == 7 and self.allowNullSelection:
+                self.callback(self.trackIndex, -1)
+                self.io.setLPController(self.parent)
 
 class PatternFunctionsController(PatternController):
     def __init__(self, parent):
@@ -722,6 +743,58 @@ class PatternFunctionsController(PatternController):
                 return
         if section == 'right' and col == 8:
             pass
+
+class SongEditController(LPController):
+    def __init__(self, parent):
+        self.parent = parent
+        self.io = self.parent.io
+        self.io.song.addObserver(self)
+        self.vscroll = 0
+
+    def __str__(self):
+        return '{}()'.format(self.__class__.__name__)
+
+    def onCurrentRowChange(self, row):
+        self.update()
+
+    def onSongChange(self):
+        self.update()
+
+    def update(self, sync=True):
+        debug('SongEditController.update()')
+        self.sendCommand(['clearb', 'default'])
+
+        for row in range(self.io.song.getLength()):
+            curRow = row == self.io.song.currentRow
+            for trackIndex, track in enumerate(self.io.song.tracks):
+                v = self.io.song.get(row, trackIndex)
+                c = [0, 0] if v == -1 else [2, 2] if curRow else [0, 3]
+                self.sendCommand(['setb', 'default', 'center', row, trackIndex] + c)
+        self.sendCommand(['setb', 'default', 'top', 8, 4, 2, 2])
+        if sync:
+            self.sendCommand(['sync', 'default'])
+
+    def onLPButtonPress(self, buf, section, row, col):
+        super(SongEditController, self).onLPButtonPress(buf, section, row, col)
+        buf = str(buf)
+        section = str(section)
+        if buf != 'default':
+            return
+        if section == 'center':
+            self.editingRow = row
+            self.editingTrack = col
+            v = self.io.song.get(row, col)
+            cb = lambda trkIdx, patIdx: self.io.song.set(self.editingRow, trkIdx, patIdx)
+            self.io.setLPController(PatternSelectController(self, self.editingTrack, cb, v, True, listenToTrackStatusChange=False))
+        elif section == 'top' and row == 8:
+            if col in range(2):
+                self.scroll[0] += int(col == 1) - int(col == 0)
+                self.scroll[1] += int(col == 3) - int(col == 2)
+                self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
+                return
+            if col == 4:
+                self.io.setLPController(self.parent)
+                return
 
 class TracksController(LKController):
     def __init__(self, io):
