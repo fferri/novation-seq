@@ -1,6 +1,6 @@
 #N canvas 68 327 445 399 10;
 #X obj 31 107 inlet;
-#X obj 31 181 pyext launchkey launchkey;
+#X obj 31 181 pyext launchkey LaunchkeyPd;
 #X obj 129 238 outlet;
 #X msg 85 104 midi \$1;
 #X obj 70 348 f \$1;
