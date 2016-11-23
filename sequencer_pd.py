@@ -72,6 +72,9 @@ class IO(pyext._class):
         self.lpcontroller.update()
         self.lkcontroller.update()
 
+    def init_1(self):
+        self._init()
+
     def setLPController(self, c):
         self.lpcontroller = c
         self.lpcontroller.update()
