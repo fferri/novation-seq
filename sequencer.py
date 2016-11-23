@@ -423,19 +423,26 @@ class PatternEditController(PatternController):
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
 
+    def selectPattern(self, trackIndex, patternIndex, update=True):
+        if self.trackIndex == trackIndex and self.patternIndex == patternIndex:
+            return
+        if self.trackIndex != trackIndex:
+            self.track.removeObserver(self)
+            self.trackIndex = self.io.song.activeTrack.trackIndex
+            self.track = self.io.song.tracks[self.trackIndex]
+            self.track.addObserver(self)
+            self.scroll = [0, 0]
+        self.pattern.removeObserver(self)
+        self.patternIndex = patternIndex
+        self.pattern = self.track.patterns[self.patternIndex]
+        self.pattern.addObserver(self)
+        if update:
+            self.update()
+
     def onTrackStatusChange(self, trackIndex, volume, muted, active):
         debug('PatternEditController.onTrackStatusChange({trackIndex}, {volume}, {muted}, {active})', **locals())
         if active == False:
-            self.track.removeObserver(self)
-            self.pattern.removeObserver(self)
-            self.trackIndex = self.io.song.activeTrack.trackIndex
-            self.track = self.io.song.tracks[self.trackIndex]
-            self.patternIndex = 0
-            self.pattern = self.track.patterns[self.patternIndex]
-            self.scroll = [0, 0]
-            self.track.addObserver(self)
-            self.pattern.addObserver(self)
-            self.update()
+            self.selectPattern(self.io.song.activeTrack.trackIndex, 0)
 
     def onPlayHeadChange(self, old, new):
         if self.patternIndex in (old.patternIndex, new.patternIndex):
@@ -480,6 +487,9 @@ class PatternEditController(PatternController):
                 self.scroll[0] = max(0, min(127, self.scroll[0]))
                 self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
                 self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
+                return
+            if col == 4:
+                self.io.setLPController(PatternSelectController(self, self.trackIndex))
                 return
             if col == 7:
                 self.io.setLPController(PatternFunctionsController(self))
@@ -601,6 +611,69 @@ class PatternEditNoteController(PatternController):
                 self.length = 1
                 self.deleteOnRelease = False
                 self.update()
+                return
+
+class PatternSelectController(LPController):
+    def __init__(self, parent, trackIndex):
+        self.parent = parent
+        self.io = self.parent.io
+        self.trackIndex = trackIndex
+        self.track = self.io.song.tracks[self.trackIndex]
+        for track in self.io.song.tracks:
+            track.addObserver(self)
+        for pattern in self.track.patterns:
+            pattern.addObserver(self)
+
+    def __str__(self):
+        return '{}()'.format(self.__class__.__name__)
+
+    def selectTrack(self, trackIndex):
+        self.trackIndex = trackIndex
+        self.track = self.io.song.tracks[self.trackIndex]
+        self.update()
+
+    def onPatternChange(self, trackIndex, patternIndex):
+        if trackIndex == self.trackIndex:
+            self.update()
+
+    def onTrackStatusChange(self, trackIndex, volume, muted, active):
+        if active:
+            self.selectTrack(trackIndex)
+
+    def update(self, sync=True):
+        debug('PatternSelectController.update()')
+        self.sendCommand(['clearb', 'default'])
+        for patternIndex in range(64):
+            row, col = patternIndex / 8, patternIndex % 8
+            pattern = self.track.patterns[patternIndex]
+            empty = pattern.isEmpty()
+            color = [0, 1] if empty else [2, 3]
+            self.sendCommand(['setb', 'default', 'center', row, col] + color)
+        self.sendCommand(['setb', 'default', 'right', 7, 8, 3, 0])
+        if sync:
+            self.sendCommand(['sync', 'default'])
+
+    def onLPButtonPress(self, buf, section, row, col):
+        super(PatternSelectController, self).onLPButtonPress(buf, section, row, col)
+        buf = str(buf)
+        section = str(section)
+        if buf != 'default':
+            return
+        if section == 'center':
+            patternIndex = row * 8 + col
+            self.parent.selectPattern(self.trackIndex, patternIndex, update=False)
+            self.io.setLPController(self.parent)
+            pass
+        elif section == 'top' and row == 8:
+            if col in range(4):
+                #self.scroll[0] += int(col == 1) - int(col == 0)
+                #self.scroll[1] += int(col == 3) - int(col == 2)
+                #self.scroll[0] = max(0, min(127, self.scroll[0]))
+                #self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
+                #self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
+                return
+            if col == 4:
+                self.io.setLPController(self.parent)
                 return
 
 class PatternFunctionsController(PatternController):
