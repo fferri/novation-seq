@@ -3,19 +3,72 @@ from sequencer.model import *
 from sequencer.controller import *
 from device import *
 
+class LaunchpadImpl(BufferedLaunchpad):
+    def __init__(self, pdobj):
+        super(LaunchpadImpl, self).__init__()
+        self.pdobj = pdobj
+
+    def writeMidi(self, v1, v2, v3):
+        for v in (v1, v2, v3):
+            self.pdobj._outlet(1, ['midi', self.pdobj.launchpadPort, v])
+
+    def onBufferButtonEvent(self, buf, section, row, col, pressed):
+        for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
+            if isinstance(controller, LPController):
+                if pressed: controller.onLPButtonPress(buf, section, row, col)
+                else: controller.onLPButtonRelease(buf, section, row, col)
+
+class LaunchkeyImpl(Launchkey):
+    def __init__(self, pdobj):
+        super(LaunchkeyImpl, self).__init__()
+        self.pdobj = pdobj
+
+    def writeMidi(self, port, v1, v2, v3):
+        for v in (v1, v2, v3):
+            self.pdobj._outlet(1, ['midi', self.pdobj.launchkeyPorts[port], v])
+
+    def onNoteEvent(self, note, velocity):
+        for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
+            if isinstance(controller, LKController):
+                if velocity > 0: controller.onNoteOn(note, velocity)
+                else: controller.onNoteOff(note)
+
+    def onPadEvent(self, row, col, velocity):
+        for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
+            if isinstance(controller, LKController):
+                if velocity > 0: controller.onPadPress(row, col, velocity)
+                else: controller.onPadRelease(row, col, velocity)
+
+    def onControlEvent(self, num, value):
+        for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
+            if isinstance(controller, LKController):
+                controller.onControlChange(num, value)
+
+    def onButtonEvent(self, buttonName, pressed):
+        for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
+            if isinstance(controller, LKController):
+                if pressed: controller.onButtonPress(buttonName)
+                else: controller.onButtonPress(buttonName)
+
 class IO(pyext._class):
     _inlets = 1
     _outlets = 1
 
-    def __init__(self):
-        self.launchpad = BufferedLaunchpad()
-        self.launchkey = Launchkey()
+    def __init__(self, launchpadPort, launchkeyPort, launchkeyCtrlPort, midiOutPort):
+        self.launchpadPort = launchpadPort
+        self.launchkeyPorts = (launchkeyPort, launchkeyCtrlPort)
+        self.midiOutPort = midiOutPort
         self.song = Song()
+        self.launchpad = LaunchpadImpl(self)
+        self.launchkey = LaunchkeyImpl(self)
         self.lpcontroller = PatternEditController(self, 0, 0)
         self.lkcontroller = TracksController(self)
+        self.midiBuffer = {}
 
     def _init(self):
-        self.sendLaunchkeyCommand(['extendedmode', 1])
+        self.launchpad.reset()
+        self.launchkey.reset()
+        self.launchkey.setExtendedMode(True)
         self.lpcontroller.update()
         self.lkcontroller.update()
 
@@ -27,50 +80,17 @@ class IO(pyext._class):
         self.lkcontroller = c
         self.lkcontroller.update()
 
-    def onLPButtonPress(self, buf, section, row, col):
-        for controller in (self.lpcontroller, self.lkcontroller):
-            if isinstance(controller, LPController):
-                controller.onLPButtonPress(buf, section, row, col)
-
-    def onLPButtonRelease(self, buf, section, row, col):
-        for controller in (self.lpcontroller, self.lkcontroller):
-            if isinstance(controller, LPController):
-                controller.onLPButtonRelease(buf, section, row, col)
-
-    def onButtonPress(self, buttonName):
-        for controller in (self.lpcontroller, self.lkcontroller):
-            if isinstance(controller, LKController):
-                controller.onButtonPress(buttonName)
-
-    def onButtonRelease(self, buttonName):
-        for controller in (self.lpcontroller, self.lkcontroller):
-            if isinstance(controller, LKController):
-                controller.onButtonRelease(buttonName)
-
-    def onNoteOn(self, note, velocity):
-        for controller in (self.lpcontroller, self.lkcontroller):
-            if isinstance(controller, LKController):
-                controller.onNoteOn(note, velocity)
-
-    def onNoteOff(self, note):
-        for controller in (self.lpcontroller, self.lkcontroller):
-            if isinstance(controller, LKController):
-                controller.onNoteOff(note)
-
-    def onPadPress(self, row, col, velocity):
-        for controller in (self.lpcontroller, self.lkcontroller):
-            if isinstance(controller, LKController):
-                controller.onPadPress(row, col, velocity)
-
-    def onPadRelease(self, row, col, velocity):
-        for controller in (self.lpcontroller, self.lkcontroller):
-            if isinstance(controller, LKController):
-                controller.onPadRelease(row, col, velocity)
-
-    def onControlChange(self, num, value):
-        for controller in (self.lpcontroller, self.lkcontroller):
-            if isinstance(controller, LKController):
-                controller.onControlChange(num, value)
+    def midi_1(self, pdport, f):
+        if pdport not in self.midiBuffer or f & 0x80:
+            self.midiBuffer[pdport] = []
+        self.midiBuffer[pdport].append(f)
+        if len(self.midiBuffer[pdport]) == 3:
+            if pdport == self.launchpadPort:
+                self.launchpad.onMidiData(self.midiBuffer[pdport])
+            elif pdport == self.launchkeyPorts[0]:
+                self.launchkey.onMidiData(0, self.midiBuffer[pdport])
+            elif pdport == self.launchkeyPorts[1]:
+                self.launchkey.onMidiData(1, self.midiBuffer[pdport])
 
     def getrowduration_1(self, row):
         self._outlet(1, ['rowduration', row, self.song.getRowDuration(row)])
@@ -146,29 +166,4 @@ class IO(pyext._class):
     def setspeedreduction_1(self, trackIndex, patternIndex, speedReduction):
         pattern = self.song.tracks[trackIndex].patterns[patternIndex]
         pattern.setSpeedReduction(speedReduction)
-
-    def buffer_2(self, buf, section, btnCmd, row, col, pressed):
-        if pressed: self.onLPButtonPress(buf, section, row, col)
-        else: self.onLPButtonRelease(buf, section, row, col)
-
-    def note_3(self, note, velocity):
-        if velocity > 0: self.onNoteOn(note, velocity)
-        else: self.onNoteOff(note)
-
-    def control_3(self, num, value):
-        self.onControlChange(num, value)
-
-    def pad_3(self, row, col, velocity):
-        if velocity > 0: self.onPadPress(row, col, velocity)
-        else: self.onPadRelease(row, col, velocity)
-
-    def button_3(self, name, pressed):
-        if pressed: self.onButtonPress(name)
-        else: self.onButtonRelease(name)
-
-    def sendLaunchpadCommand(self, l):
-        self._outlet(2, l)
-
-    def sendLaunchkeyCommand(self, l):
-        self._outlet(3, l)
 

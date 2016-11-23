@@ -16,11 +16,11 @@ class PatternFunctionsController(PatternController):
 
     def update(self, sync=True):
         self.parent.update(sync=False)
-        self.sendCommand(['setb', 'default', 'top', 8, 7, 2, 2])
-        self.sendCommand(['setb', 'default', 'right', 0, 8, 0, 3])
-        self.sendCommand(['setb', 'default', 'right', 1, 8, 0, 3])
+        self.io.launchpad.set('default', 'top', 8, 7, 2, 2)
+        self.io.launchpad.set('default', 'right', 0, 8, 0, 3)
+        self.io.launchpad.set('default', 'right', 1, 8, 0, 3)
         if sync:
-            self.sendCommand(['sync', 'default'])
+            self.io.launchpad.syncBuffer('default')
 
     def onLPButtonPress(self, buf, section, row, col):
         super(PatternFunctionsController, self).onLPButtonPress(buf, section, row, col)

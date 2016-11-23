@@ -14,8 +14,8 @@ class TracksController(LKController):
         for trackIndex, track in enumerate(self.io.song.tracks):
             m = 3 * int(track.muted)
             a = 2 * int(activeTrack == track)
-            self.sendCommand(['setled', 0, trackIndex, a, a])
-            self.sendCommand(['setled', 1, trackIndex, m, 1 - m])
+            self.io.launchkey.setLed(0, trackIndex, a, a)
+            self.io.launchkey.setLed(1, trackIndex, m, 1 - m)
 
     def onPadPress(self, row, col, velocity):
         if row == 0 and col < 8:

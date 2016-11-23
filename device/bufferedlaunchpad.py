@@ -1,5 +1,5 @@
 from collections import defaultdict
-from devices import Launchpad
+from device import Launchpad
 
 class BufferedLaunchpad(Launchpad):
     def __init__(self):

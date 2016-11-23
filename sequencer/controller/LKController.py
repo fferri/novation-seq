@@ -4,9 +4,6 @@ class LKController(Controller):
     def __init__(self, io):
         self.io = io
 
-    def sendCommand(self, cmd):
-        self.io.sendLaunchkeyCommand(cmd)
-
     def onButtonPress(self, buttonName):
         pass
 

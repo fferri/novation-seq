@@ -19,9 +19,9 @@ class PatternAddNoteController(PatternController):
     def update(self, sync=True):
         self.parent.update(sync=False)
         for c in range(self.length):
-            self.sendCommand(['setb', 'default', 'center', self.note, self.patternRow + c, 3, 0])
+            self.io.launchpad.set('default', 'center', self.note, self.patternRow + c, 3, 0)
         if sync:
-            self.sendCommand(['sync', 'default'])
+            self.io.launchpad.syncBuffer('default')
 
     def onLPButtonPress(self, buf, section, row, col):
         super(PatternAddNoteController, self).onLPButtonPress(buf, section, row, col)

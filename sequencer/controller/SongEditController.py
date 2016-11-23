@@ -19,18 +19,18 @@ class SongEditController(LPController):
         self.update()
 
     def update(self, sync=True):
-        self.sendCommand(['clearb', 'default'])
+        self.io.launchpad.clearBuffer('default')
 
         for row in range(self.io.song.getLength()):
             curRow = row == self.io.song.currentRow
             for trackIndex, track in enumerate(self.io.song.tracks):
                 v = self.io.song.get(row, trackIndex)
                 c = [0, 0] if v == -1 else [2, 2] if curRow else [0, 3]
-                self.sendCommand(['setb', 'default', 'center', row, trackIndex] + c)
-            self.sendCommand(['setb', 'default', 'right', row, 8, 3 * int(curRow), 1])
-        self.sendCommand(['setb', 'default', 'top', 8, 4, 2, 2])
+                self.io.launchpad.set('default', 'center', row, trackIndex, *c)
+            self.io.launchpad.set('default', 'right', row, 8, 3 * int(curRow), 1)
+        self.io.launchpad.set('default', 'top', 8, 4, 2, 2)
         if sync:
-            self.sendCommand(['sync', 'default'])
+            self.io.launchpad.syncBuffer('default')
 
     def onLPButtonPress(self, buf, section, row, col):
         super(SongEditController, self).onLPButtonPress(buf, section, row, col)
@@ -47,8 +47,9 @@ class SongEditController(LPController):
         elif section == 'top' and row == 8:
             if col in range(2):
                 self.vscroll += int(col == 1) - int(col == 0)
-                self.sendCommand(['scroll', 'default', 'center', vscroll, 0])
-                self.sendCommand(['scroll', 'default', 'right', vscroll, 0])
+                self.io.launchpad.scroll('default', 'center', vscroll, 0)
+                self.io.launchpad.scroll('default', 'right', vscroll, 0)
+                self.io.launchpad.syncBuffer('default')
                 return
             if col == 4:
                 self.io.setLPController(self.parent)

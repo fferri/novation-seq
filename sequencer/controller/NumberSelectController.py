@@ -13,17 +13,17 @@ class NumberSelectController(LPController):
         return '{}(parent={}, currentValue={}, minValue={}, maxValue={})'.format(self.__class__.__name__, self.parent, self.currentValue, self.minValue, self.maxValue)
 
     def update(self, sync=True):
-        self.sendCommand(['clearb', 'default'])
+        self.io.launchpad.clearBuffer('default')
         for v in range(max(0, self.minValue), 1 + self.maxValue):
             cur = v == self.currentValue
             color = [2, 0] if cur else [0, 2]
             if v == 0:
-                self.sendCommand(['setb', 'default', 'right', row, col] + color)
+                self.io.launchpad.set('default', 'right', row, col, *color)
             else:
                 row, col = (v - 1) / 8, (v - 1) % 8
-                self.sendCommand(['setb', 'default', 'center', row, col] + color)
+                self.io.launchpad.set('default', 'center', row, col, *color)
         if sync:
-            self.sendCommand(['sync', 'default'])
+            self.io.launchpad.syncBuffer('default')
 
     def onLPButtonPress(self, buf, section, row, col):
         super(NumberSelectController, self).onLPButtonPress(buf, section, row, col)

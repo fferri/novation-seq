@@ -48,22 +48,22 @@ class PatternEditController(PatternController):
             self.io.lpcontroller.update()
 
     def update(self, sync=True):
-        self.sendCommand(['clearb', 'default'])
+        self.io.launchpad.clearBuffer('default')
 
         if self.track.playHead.patternIndex == self.patternIndex:
             for row in range(128):
-                self.sendCommand(['setb', 'default', 'center', row, self.track.playHead.patternRow, 1, 0])
+                self.io.launchpad.set('default', 'center', row, self.track.playHead.patternRow, 1, 0)
 
         for note, intervals in self.pattern.noteGetIntervals().items():
             for (rowStart, rowStop) in intervals:
-                self.sendCommand(['setb', 'default', 'center', note, rowStart, 2, 3])
+                self.io.launchpad.set('default', 'center', note, rowStart, 2, 3)
                 for row in range(rowStart + 1, rowStop):
-                    self.sendCommand(['setb', 'default', 'center', note, row, 0, 1])
+                    self.io.launchpad.set('default', 'center', note, row, 0, 1)
                 if self.renderNoteOffs:
-                    self.sendCommand(['setb', 'default', 'center', note, rowStop, 1, 0])
+                    self.io.launchpad.set('default', 'center', note, rowStop, 1, 0)
 
         if sync:
-            self.sendCommand(['sync', 'default'])
+            self.io.launchpad.syncBuffer('default')
 
     def onLPButtonPress(self, buf, section, row, col):
         super(PatternEditController, self).onLPButtonPress(buf, section, row, col)
@@ -84,7 +84,8 @@ class PatternEditController(PatternController):
                 self.scroll[1] += int(col == 3) - int(col == 2)
                 self.scroll[0] = max(0, min(127, self.scroll[0]))
                 self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
-                self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
+                self.io.launchpad.scroll('default', 'center', *self.scroll)
+                self.io.launchpad.syncBuffer('default')
                 return
             if col == 4:
                 self.io.setLPController(SongEditController(self))
