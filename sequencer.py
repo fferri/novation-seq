@@ -112,12 +112,34 @@ class Pattern(object):
                 return True
         return False
 
+    def isEmptyCell(self, row, col):
+        if row not in self.data: return True
+        if col not in self.data[row]: return True
+        if self.data[row][col] == -1: return True
+        return False
+
+    def isEmptyRow(self, row):
+        if row not in self.data: return True
+        for col in self.data[row]:
+            if self.data[row][col] != -1:
+                return False
+        return True
+
+    def isEmpty(self):
+        for row in self.data:
+            for col in self.data[row]:
+                if self.data[row][col] != -1:
+                    return False
+        return True
+
     def get(self, row, col):
         return self.data[row][col]
 
     def set(self, row, col, value, notify=True):
         if value == -1:
             del self.data[row][col]
+            if self.isEmptyRow(row):
+                del self.data[row]
         else:
             self.data[row][col] = value
         if notify: self.notifyPatternChange()
