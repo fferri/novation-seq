@@ -527,7 +527,7 @@ class PatternAddNoteController(PatternController):
         self.pattern.addObserver(self)
 
     def __str__(self):
-        return '{}(trackIndex={}, patternIndex={}, patternRow={}, note={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex, self.patternRow, self.note)
+        return '{}(parent={}, trackIndex={}, patternIndex={}, patternRow={}, note={})'.format(self.__class__.__name__, self.parent, self.trackIndex, self.patternIndex, self.patternRow, self.note)
 
     def update(self, sync=True):
         self.parent.update(sync=False)
@@ -583,7 +583,7 @@ class PatternEditNoteController(PatternController):
         self.pattern.addObserver(self)
 
     def __str__(self):
-        return '{}(trackIndex={}, patternIndex={}, patternRow={}, note={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex, self.patternRow, self.note)
+        return '{}(parent={}, trackIndex={}, patternIndex={}, patternRow={}, note={})'.format(self.__class__.__name__, self.parent, self.trackIndex, self.patternIndex, self.patternRow, self.note)
 
     def update(self, sync=True):
         self.parent.update(sync=False)
@@ -647,7 +647,7 @@ class PatternSelectController(LPController):
             pattern.addObserver(self)
 
     def __str__(self):
-        return '{}()'.format(self.__class__.__name__)
+        return '{}(parent={})'.format(self.__class__.__name__, self.parent)
 
     def selectTrack(self, trackIndex):
         self.trackIndex = trackIndex
@@ -717,7 +717,7 @@ class PatternFunctionsController(PatternController):
         self.pattern.addObserver(self)
 
     def __str__(self):
-        return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
+        return '{}(parent={})'.format(self.__class__.__name__, self.parent)
 
     def update(self, sync=True):
         self.parent.update(sync=False)
@@ -742,7 +742,14 @@ class PatternFunctionsController(PatternController):
                 self.io.setLPController(self.parent)
                 return
         if section == 'right' and col == 8:
-            pass
+            if row == 0: # set pattern length
+                cb = lambda n: self.pattern.setLength(n)
+                self.io.setLPController(NumberSelectController(self, cb, self.pattern.getLength(), 1, 64))
+                return
+            elif row == 1: # set pattern speed reduction
+                cb = lambda n: self.pattern.setSpeedReduction(n)
+                self.io.setLPController(NumberSelectController(self, cb, self.pattern.getSpeedReduction(), 1, 32))
+                return
 
 class SongEditController(LPController):
     def __init__(self, parent):
@@ -752,7 +759,7 @@ class SongEditController(LPController):
         self.vscroll = 0
 
     def __str__(self):
-        return '{}()'.format(self.__class__.__name__)
+        return '{}(parent={})'.format(self.__class__.__name__, self.parent)
 
     def onCurrentRowChange(self, row):
         self.update()
@@ -770,6 +777,7 @@ class SongEditController(LPController):
                 v = self.io.song.get(row, trackIndex)
                 c = [0, 0] if v == -1 else [2, 2] if curRow else [0, 3]
                 self.sendCommand(['setb', 'default', 'center', row, trackIndex] + c)
+            self.sendCommand(['setb', 'default', 'right', row, 8, 3 * int(curRow), 1])
         self.sendCommand(['setb', 'default', 'top', 8, 4, 2, 2])
         if sync:
             self.sendCommand(['sync', 'default'])
@@ -788,13 +796,63 @@ class SongEditController(LPController):
             self.io.setLPController(PatternSelectController(self, self.editingTrack, cb, v, True, listenToTrackStatusChange=False))
         elif section == 'top' and row == 8:
             if col in range(2):
-                self.scroll[0] += int(col == 1) - int(col == 0)
-                self.scroll[1] += int(col == 3) - int(col == 2)
-                self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
+                self.vscroll += int(col == 1) - int(col == 0)
+                self.sendCommand(['scroll', 'default', 'center', vscroll, 0])
+                self.sendCommand(['scroll', 'default', 'right', vscroll, 0])
                 return
             if col == 4:
                 self.io.setLPController(self.parent)
                 return
+        elif section == 'right': # and col == 8:
+            cb = lambda n: self.io.song.setRowDuration(row, n)
+            self.io.setLPController(NumberSelectController(self, cb, self.io.song.getRowDuration(row), 1, 64))
+            return
+
+
+class NumberSelectController(LPController):
+    def __init__(self, parent, callback, currentValue=0, minValue=0, maxValue=64):
+        self.parent = parent
+        self.io = self.parent.io
+        self.callback = callback
+        self.currentValue = currentValue
+        self.minValue = minValue
+        self.maxValue = maxValue
+
+    def __str__(self):
+        return '{}(parent={}, currentValue={}, minValue={}, maxValue={})'.format(self.__class__.__name__, self.parent, self.currentValue, self.minValue, self.maxValue)
+
+    def update(self, sync=True):
+        debug('NumberSelectController.update()')
+        self.sendCommand(['clearb', 'default'])
+        for v in range(max(0, self.minValue), 1 + self.maxValue):
+            cur = v == self.currentValue
+            color = [2, 0] if cur else [0, 2]
+            if v == 0:
+                self.sendCommand(['setb', 'default', 'right', row, col] + color)
+            else:
+                row, col = (v - 1) / 8, (v - 1) % 8
+                self.sendCommand(['setb', 'default', 'center', row, col] + color)
+        if sync:
+            self.sendCommand(['sync', 'default'])
+
+    def onLPButtonPress(self, buf, section, row, col):
+        super(NumberSelectController, self).onLPButtonPress(buf, section, row, col)
+        buf = str(buf)
+        section = str(section)
+        if buf != 'default':
+            return
+        if section == 'center':
+            v = 1 + row * 8 + col
+            if self.minValue <= v <= self.maxValue:
+                self.selectNumber(v)
+            return
+        elif section == 'right' and col == 8 and row == 7 and self.minValue <= 0 and self.maxValue >= 0:
+            self.selectNumber(0)
+            return
+
+    def selectNumber(self, v):
+        self.callback(v)
+        self.io.setLPController(self.parent)
 
 class TracksController(LKController):
     def __init__(self, io):
