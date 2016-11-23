@@ -367,18 +367,31 @@ class Song(object):
                 d.append(pattern.dump())
         return '\n'.join(d)
 
-class LPController(object):
+class Controller(object):
+    def update(self):
+        pass
+
+    def onPlayHeadChange(self, old, new):
+        pass
+
+    def onTrackStatusChange(self, trackIndex, volume, muted, active):
+        pass
+
+    def onPatternChange(self, trackIndex, patternIndex):
+        pass
+
+    def onCurrentRowChange(self, row):
+        pass
+
+    def onSongChange(self):
+        pass
+
+class LPController(Controller):
     def __init__(self, io):
         self.io = io
 
     def sendCommand(self, cmd):
         self.io.sendLaunchpadCommand(cmd)
-
-    def update(self):
-        pass
-
-    def onPatternChange(self, trackIndex, patternIndex):
-        debug('LPController.onPatternChange({trackIndex}, {patternIndex})', **locals())
 
     def onLPButtonPress(self, buf, section, row, col):
         debug('LPController.onLPButtonPress({buf}, {section}, {row}, {col})', **locals())
@@ -386,15 +399,12 @@ class LPController(object):
     def onLPButtonRelease(self, buf, section, row, col):
         debug('LPController.onLPButtonRelease({buf}, {section}, {row}, {col})', **locals())
 
-class LKController(object):
+class LKController(Controller):
     def __init__(self, io):
         self.io = io
 
     def sendCommand(self, cmd):
         self.io.sendLaunchkeyCommand(cmd)
-
-    def update(self):
-        pass
 
     def onButtonPress(self, buttonName):
         debug('LKController.onButtonPress({buttonName})', **locals())
@@ -869,9 +879,6 @@ class TracksController(LKController):
         if isActive == True:
             debug('TracksController.onTrackStatusChange: track {trackIndex} is now active', **locals())
         self.update()
-
-    def onPlayHeadChange(self, old, new):
-        pass
 
     def update(self):
         debug('TracksController.update() called')
