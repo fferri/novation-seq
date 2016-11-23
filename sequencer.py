@@ -445,7 +445,8 @@ class PatternEditController(PatternController):
         debug('PatternEditController.onTrackStatusChange({trackIndex}, {volume}, {muted}, {active})', **locals())
         if active == False:
             newTrack = self.io.song.activeTrack
-            self.selectPattern(newTrack.trackIndex, newTrack.lastSelectedPatternIndex)
+            u = self.io.lpcontroller == self
+            self.selectPattern(newTrack.trackIndex, newTrack.lastSelectedPatternIndex, update=u)
 
     def onPlayHeadChange(self, old, new):
         if self.patternIndex in (old.patternIndex, new.patternIndex):
@@ -491,8 +492,9 @@ class PatternEditController(PatternController):
                 self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
                 self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
                 return
-            if col == 4:
-                self.io.setLPController(PatternSelectController(self, self.trackIndex))
+            if col == 5:
+                cb = lambda trkIdx, patIdx: self.selectPattern(trkIdx, patIdx, True)
+                self.io.setLPController(PatternSelectController(self, self.trackIndex, cb))
                 return
             if col == 7:
                 self.io.setLPController(PatternFunctionsController(self))
@@ -617,13 +619,15 @@ class PatternEditNoteController(PatternController):
                 return
 
 class PatternSelectController(LPController):
-    def __init__(self, parent, trackIndex):
+    def __init__(self, parent, trackIndex, callback, listenToTrackStatusChange=True):
         self.parent = parent
         self.io = self.parent.io
         self.trackIndex = trackIndex
         self.track = self.io.song.tracks[self.trackIndex]
-        for track in self.io.song.tracks:
-            track.addObserver(self)
+        self.callback = callback
+        if listenToTrackStatusChange:
+            for track in self.io.song.tracks:
+                track.addObserver(self)
         for pattern in self.track.patterns:
             pattern.addObserver(self)
 
@@ -650,7 +654,8 @@ class PatternSelectController(LPController):
             row, col = patternIndex / 8, patternIndex % 8
             pattern = self.track.patterns[patternIndex]
             empty = pattern.isEmpty()
-            color = [0, 1] if empty else [2, 3]
+            cur = patternIndex == self.track.lastSelectedPatternIndex
+            color = [2, 0] if cur else [0, 1] if empty else [2, 3]
             self.sendCommand(['setb', 'default', 'center', row, col] + color)
         self.sendCommand(['setb', 'default', 'right', 7, 8, 3, 0])
         if sync:
@@ -664,7 +669,8 @@ class PatternSelectController(LPController):
             return
         if section == 'center':
             patternIndex = row * 8 + col
-            self.parent.selectPattern(self.trackIndex, patternIndex, update=False)
+            #self.parent.selectPattern(self.trackIndex, patternIndex, update=False)
+            self.callback(self.trackIndex, patternIndex)
             self.io.setLPController(self.parent)
             pass
         elif section == 'top' and row == 8:
@@ -675,7 +681,7 @@ class PatternSelectController(LPController):
                 #self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
                 #self.sendCommand(['scroll', 'default', 'center'] + self.scroll)
                 return
-            if col == 4:
+            if col == 5:
                 self.io.setLPController(self.parent)
                 return
 
