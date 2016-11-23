@@ -627,6 +627,51 @@ class IO(pyext._class):
         self.lkcontroller = c
         self.lkcontroller.update()
 
+    def onLPButtonPress(self, buf, section, row, col):
+        for controller in (self.lpcontroller, self.lkcontroller):
+            if isinstance(controller, LPController):
+                controller.onLPButtonPress(buf, section, row, col)
+
+    def onLPButtonRelease(self, buf, section, row, col):
+        for controller in (self.lpcontroller, self.lkcontroller):
+            if isinstance(controller, LPController):
+                controller.onLPButtonRelease(buf, section, row, col)
+
+    def onButtonPress(self, buttonName):
+        for controller in (self.lpcontroller, self.lkcontroller):
+            if isinstance(controller, LKController):
+                controller.onButtonPress(buttonName)
+
+    def onButtonRelease(self, buttonName):
+        for controller in (self.lpcontroller, self.lkcontroller):
+            if isinstance(controller, LKController):
+                controller.onButtonRelease(buttonName)
+
+    def onNoteOn(self, note, velocity):
+        for controller in (self.lpcontroller, self.lkcontroller):
+            if isinstance(controller, LKController):
+                controller.onNoteOn(note, velocity)
+
+    def onNoteOff(self, note):
+        for controller in (self.lpcontroller, self.lkcontroller):
+            if isinstance(controller, LKController):
+                controller.onNoteOff(note)
+
+    def onPadPress(self, row, col, velocity):
+        for controller in (self.lpcontroller, self.lkcontroller):
+            if isinstance(controller, LKController):
+                controller.onPadPress(row, col, velocity)
+
+    def onPadRelease(self, row, col, velocity):
+        for controller in (self.lpcontroller, self.lkcontroller):
+            if isinstance(controller, LKController):
+                controller.onPadRelease(row, col, velocity)
+
+    def onControlChange(self, num, value):
+        for controller in (self.lpcontroller, self.lkcontroller):
+            if isinstance(controller, LKController):
+                controller.onControlChange(num, value)
+
     def getrowduration_1(self, row):
         self._outlet(1, ['rowduration', row, self.song.getRowDuration(row)])
 
@@ -703,31 +748,23 @@ class IO(pyext._class):
         pattern.setSpeedReduction(speedReduction)
 
     def buffer_2(self, buf, section, btnCmd, row, col, pressed):
-        if pressed:
-            self.lpcontroller.onLPButtonPress(buf, section, row, col)
-        else:
-            self.lpcontroller.onLPButtonRelease(buf, section, row, col)
+        if pressed: self.onLPButtonPress(buf, section, row, col)
+        else: self.onLPButtonRelease(buf, section, row, col)
 
     def note_3(self, note, velocity):
-        if velocity > 0:
-            self.lkcontroller.onNoteOn(note, velocity)
-        else:
-            self.lkcontroller.onNoteOff(note)
+        if velocity > 0: self.onNoteOn(note, velocity)
+        else: self.onNoteOff(note)
 
     def control_3(self, num, value):
-        self.lkcontroller.onControlChange(num, value)
+        self.onControlChange(num, value)
 
     def pad_3(self, row, col, velocity):
-        if velocity > 0:
-            self.lkcontroller.onPadPress(row, col, velocity)
-        else:
-            self.lkcontroller.onPadRelease(row, col, velocity)
+        if velocity > 0: self.onPadPress(row, col, velocity)
+        else: self.onPadRelease(row, col, velocity)
 
     def button_3(self, name, pressed):
-        if pressed:
-            self.lkcontroller.onButtonPress(name)
-        else:
-            self.lkcontroller.onButtonRelease(name)
+        if pressed: self.onButtonPress(name)
+        else: self.onButtonRelease(name)
 
     def sendLaunchpadCommand(self, l):
         self._outlet(2, l)
