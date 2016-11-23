@@ -207,6 +207,7 @@ class Track(object):
         self.observers = weakref.WeakKeyDictionary()
         self.volume = 100
         self.muted = False
+        self.lastSelectedPatternIndex = 0
 
     def addObserver(self, callable_):
         self.observers[callable_] = 1
@@ -436,13 +437,15 @@ class PatternEditController(PatternController):
         self.patternIndex = patternIndex
         self.pattern = self.track.patterns[self.patternIndex]
         self.pattern.addObserver(self)
+        self.track.lastSelectedPatternIndex = self.patternIndex
         if update:
             self.update()
 
     def onTrackStatusChange(self, trackIndex, volume, muted, active):
         debug('PatternEditController.onTrackStatusChange({trackIndex}, {volume}, {muted}, {active})', **locals())
         if active == False:
-            self.selectPattern(self.io.song.activeTrack.trackIndex, 0)
+            newTrack = self.io.song.activeTrack
+            self.selectPattern(newTrack.trackIndex, newTrack.lastSelectedPatternIndex)
 
     def onPlayHeadChange(self, old, new):
         if self.patternIndex in (old.patternIndex, new.patternIndex):
