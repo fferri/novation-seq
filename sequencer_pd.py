@@ -1,12 +1,15 @@
 import pyext
 from sequencer.model import *
 from sequencer.controller import *
+from device import *
 
 class IO(pyext._class):
-    _inlets = 3
-    _outlets = 3
+    _inlets = 1
+    _outlets = 1
 
     def __init__(self):
+        self.launchpad = BufferedLaunchpad()
+        self.launchkey = Launchkey()
         self.song = Song()
         self.lpcontroller = PatternEditController(self, 0, 0)
         self.lkcontroller = TracksController(self)

@@ -1,6 +1,6 @@
 import pyext
 from collections import defaultdict
-from devices import BufferedLaunchpad
+from device import BufferedLaunchpad
 
 class BufferedLaunchpadPdImpl(BufferedLaunchpad):
     def __init__(self, pdobj):

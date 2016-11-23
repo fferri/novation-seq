@@ -1,5 +1,5 @@
 import pyext
-from devices import Launchkey
+from device import Launchkey
 
 class LaunchkeyPdImpl(Launchkey):
     def __init__(self, pdobj):

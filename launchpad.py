@@ -1,5 +1,5 @@
 import pyext
-from devices import Launchpad
+from device import Launchpad
 
 class LaunchpadPdImpl(Launchpad):
     def __init__(self, pdobj):
