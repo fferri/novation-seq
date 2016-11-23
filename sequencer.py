@@ -328,6 +328,11 @@ class Song(object):
             track.playHead.reset()
             track.notifyPlayHeadChange()
 
+    def getRowModulo(self, row):
+        from fractions import gcd
+        pl = [1] + [t.patterns[pi].getLength() for t, pi in zip(self.tracks, self.getRow(row))]
+        return reduce(gcd,pl)
+
     def incrTick(self):
         self.currentTick += 1
         if self.currentTick >= self.rowDuration[self.currentRow]:
