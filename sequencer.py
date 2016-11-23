@@ -413,9 +413,9 @@ class PatternEditController(PatternController):
 
     def onPlayHeadChange(self, old, new):
         if self.patternIndex in (old.patternIndex, new.patternIndex):
-            self.update()
+            self.io.lpcontroller.update()
 
-    def update(self):
+    def update(self, sync=True):
         debug('PatternEditController.update()')
         self.sendCommand(['clearb', 'default'])
 
@@ -431,7 +431,8 @@ class PatternEditController(PatternController):
                 if self.renderNoteOffs:
                     self.sendCommand(['setb', 'default', 'center', note, rowStop, 1, 0])
 
-        self.sendCommand(['sync', 'default'])
+        if sync:
+            self.sendCommand(['sync', 'default'])
 
     def onButtonPress(self, buf, section, row, col):
         super(PatternEditController, self).onButtonPress(buf, section, row, col)
@@ -469,12 +470,13 @@ class PatternAddNoteController(PatternController):
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={}, patternRow={}, note={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex, self.patternRow, self.note)
 
-    def update(self):
-        self.parent.update()
+    def update(self, sync=True):
+        self.parent.update(sync=False)
         debug('PatternAddNoteController.update()')
         for c in range(self.length):
             self.sendCommand(['setb', 'default', 'center', self.note, self.patternRow + c, 3, 0])
-        self.sendCommand(['sync', 'default'])
+        if sync:
+            self.sendCommand(['sync', 'default'])
 
     def onButtonPress(self, buf, section, row, col):
         super(PatternAddNoteController, self).onButtonPress(buf, section, row, col)
@@ -524,12 +526,13 @@ class PatternEditNoteController(PatternController):
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={}, patternRow={}, note={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex, self.patternRow, self.note)
 
-    def update(self):
-        self.parent.update()
+    def update(self, sync=True):
+        self.parent.update(sync=False)
         debug('PatternEditNoteController.update()')
         for c in range(self.length):
             self.sendCommand(['setb', 'default', 'center', self.note, self.patternRow + c, 3, 0])
-        self.sendCommand(['sync', 'default'])
+        if sync:
+            self.sendCommand(['sync', 'default'])
 
     def onButtonPress(self, buf, section, row, col):
         super(PatternEditNoteController, self).onButtonPress(buf, section, row, col)
@@ -580,10 +583,16 @@ class TracksController(LKController):
             debug('TracksController.onTrackStatusChange: track {trackIndex} is now active', **locals())
             self.update()
 
+    def onPlayHeadChange(self, old, new):
+        pass
+
     def update(self):
         debug('TracksController.update() called')
-        for trackIndex in range(8):
-            c = [0,3] if self.io.song.activeTrack.trackIndex == trackIndex else [0,0]
+        activeTrack = self.io.song.activeTrack
+        for trackIndex, track in enumerate(self.io.song.tracks):
+            m = int(track.muted)
+            a = int(activeTrack == track)
+            c = [a+2*m,a+2*(1-m)]
             self.sendCommand(['setled', 0, trackIndex] + c)
 
     def onPadPress(self, row, col, velocity):
@@ -599,6 +608,8 @@ class IO(pyext._class):
 
     def __init__(self):
         self.song = Song()
+        self.song.tracks[6].muted = True
+        self.song.tracks[7].muted = True
         self.lpcontroller = PatternEditController(self, 0, 0)
         self.lkcontroller = TracksController(self)
 
