@@ -20,7 +20,7 @@ class Launchkey(object):
     def onButtonEvent(self, name, pressed):
         raise RuntimeError('method Launchkey.onXyzEvent not implemented')
 
-    def writeMidi(self, v1, v2, v3):
+    def writeMidi(self, port, v1, v2, v3):
         raise RuntimeError('method Launchkey.writeMidi not implemented')
 
     def onMidiData(self, port, data):
@@ -49,10 +49,10 @@ class Launchkey(object):
         return max(xmin, min(xmax, x))
 
     def reset(self):
-        self.writeMidi(0xB0, 0x00, 0x00)
+        self.writeMidi(1, 0xB0, 0x00, 0x00)
 
     def setExtendedMode(self, enable):
-        self.writeMidi(0x90, 0x0C, 0x7F * int(enable))
+        self.writeMidi(1, 0x90, 0x0C, 0x7F * int(enable))
 
     def makeValue(self, r, g, clear=False, copy=False):
         r = int(self.clip(r, 0, 3))
@@ -68,7 +68,7 @@ class Launchkey(object):
         g = int(self.clip(g, 0, 3))
         status, addr = 0x90, 0x60 + row * 0x10 + col
         val = (r & 3) | ((g & 3) << 4)
-        self.writeMidi(status, addr, val)
+        self.writeMidi(1, status, addr, val)
 
 class LaunchkeyPdImpl(Launchkey):
     def __init__(self, pdobj):
@@ -76,10 +76,13 @@ class LaunchkeyPdImpl(Launchkey):
         self.pdobj = pdobj
         self.midiBuffer = [[], []]
 
-    def writeMidi(self, v1, v2, v3):
-        self.pdobj._outlet(2, v1)
-        self.pdobj._outlet(2, v2)
-        self.pdobj._outlet(2, v3)
+    def writeMidi(self, port, v1, v2, v3):
+        if port == 0:
+            pass
+        elif port == 1:
+            self.pdobj._outlet(2, v1)
+            self.pdobj._outlet(2, v2)
+            self.pdobj._outlet(2, v3)
 
     def bufferMidi(self, port, f):
         if f & 0x80: # status bit
