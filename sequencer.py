@@ -215,6 +215,10 @@ class Track(object):
             self.muted = bool(mute)
             self.notifyTrackStatusChange()
 
+    def toggleMute(self):
+        self.muted = not self.muted
+        self.notifyTrackStatusChange()
+
     def isActive(self):
         return self.song.activeTrack == self
 
@@ -579,9 +583,9 @@ class TracksController(LKController):
             track.addObserver(self)
 
     def onTrackStatusChange(self, trackIndex, volume, muted, isActive):
-        if isActive == True: # call update only once!
+        if isActive == True:
             debug('TracksController.onTrackStatusChange: track {trackIndex} is now active', **locals())
-            self.update()
+        self.update()
 
     def onPlayHeadChange(self, old, new):
         pass
@@ -590,14 +594,16 @@ class TracksController(LKController):
         debug('TracksController.update() called')
         activeTrack = self.io.song.activeTrack
         for trackIndex, track in enumerate(self.io.song.tracks):
-            m = int(track.muted)
-            a = int(activeTrack == track)
-            c = [a+2*m,a+2*(1-m)]
-            self.sendCommand(['setled', 0, trackIndex] + c)
+            m = 3 * int(track.muted)
+            a = 2 * int(activeTrack == track)
+            self.sendCommand(['setled', 0, trackIndex, a, a])
+            self.sendCommand(['setled', 1, trackIndex, m, 1 - m])
 
     def onPadPress(self, row, col, velocity):
         if row == 0 and col < 8:
             self.io.song.tracks[col].activate()
+        elif row == 1 and col < 8:
+            self.io.song.tracks[col].toggleMute()
 
     def onControlChange(self, num, value):
         self.io.song.tracks[num].setVolume(value)
@@ -608,12 +614,11 @@ class IO(pyext._class):
 
     def __init__(self):
         self.song = Song()
-        self.song.tracks[6].muted = True
-        self.song.tracks[7].muted = True
         self.lpcontroller = PatternEditController(self, 0, 0)
         self.lkcontroller = TracksController(self)
 
     def _init(self):
+        self.sendLaunchkeyCommand(['extendedmode', 1])
         self.lpcontroller.update()
         self.lkcontroller.update()
 
