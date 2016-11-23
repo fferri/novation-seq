@@ -544,7 +544,7 @@ class PatternEditNoteController(PatternController):
             if row == self.note and col > self.patternRow:
                 self.deleteOnRelease = False
                 length = 1 + col - self.patternRow
-                if not self.pattern.noteIsPlayingInRange(self.patternRow + self.originalLength, self.patternRow + length, self.note):
+                if not self.pattern.noteIsPlayingInRange(self.patternRow + self.originalLength, self.patternRow + length - 1, self.note):
                     self.length = length
                     self.update()
                 return
