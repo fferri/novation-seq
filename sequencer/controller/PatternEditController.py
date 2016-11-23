@@ -49,6 +49,7 @@ class PatternEditController(PatternController):
 
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
+        self.io.launchpad.scroll('default','center', *self.scroll)
 
         if self.track.playHead.patternIndex == self.patternIndex:
             for row in range(128):

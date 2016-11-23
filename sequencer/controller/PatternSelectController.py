@@ -33,6 +33,8 @@ class PatternSelectController(LPController):
 
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
+        self.io.launchpad.scroll('default', 'center', 0, 0)
+        self.io.launchpad.scroll('default', 'right', 0, 0)
         for patternIndex in range(64):
             row, col = patternIndex / 8, patternIndex % 8
             pattern = self.track.patterns[patternIndex]
