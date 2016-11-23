@@ -395,8 +395,8 @@ class PatternEditController(PatternController):
         self.pattern = self.track.patterns[self.patternIndex]
         self.scroll = [0, 0]
         self.renderNoteOffs = False
-	self.track.addObserver(self)
-	self.pattern.addObserver(self)
+        self.track.addObserver(self)
+        self.pattern.addObserver(self)
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
@@ -474,7 +474,7 @@ class PatternAddNoteController(PatternController):
         self.patternRow = patternRow
         self.note = note
         self.length = 1
-	self.pattern.addObserver(self)
+        self.pattern.addObserver(self)
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={}, patternRow={}, note={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex, self.patternRow, self.note)
@@ -530,7 +530,7 @@ class PatternEditNoteController(PatternController):
         self.deleteOnRelease = True
         self.originalLength = self.pattern.noteGetLength(self.patternRow, self.note)
         self.length = self.originalLength
-	self.pattern.addObserver(self)
+        self.pattern.addObserver(self)
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={}, patternRow={}, note={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex, self.patternRow, self.note)
@@ -589,7 +589,7 @@ class PatternFunctionsController(PatternController):
         self.track = self.io.song.tracks[self.trackIndex]
         self.patternIndex = parent.patternIndex
         self.pattern = self.track.patterns[self.patternIndex]
-	self.pattern.addObserver(self)
+        self.pattern.addObserver(self)
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
