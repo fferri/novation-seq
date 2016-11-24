@@ -1,23 +1,7 @@
-#N canvas 379 259 901 471 10;
-#X msg 469 47 tick;
-#X msg 29 70 getrow 0 0 \$1;
-#X msg 29 43 0 \, 1 \, 2 \, 3 \, 4 \, 5 \, 6 \, 7;
-#X msg 428 37 dump;
-#X obj 224 40 tgl 15 0 \$0.metro.in \$0.metro.toggle.in Start/stop_metronome
-17 7 0 10 -262144 -1 -1 0 1;
-#X obj 428 82 s \$0.seq.in;
-#X obj 542 148 s \$0.seq.in;
-#X obj 29 97 s \$0.seq.in;
-#X obj 76 142 r \$0.seq.out;
-#X msg 542 36 set 0 0 4 0 4 \, set 0 0 6 0 0;
-#X msg 542 63 set 0 0 4 0 -1 \, set 0 0 6 0 -1;
-#X obj 81 197 route pos output;
-#X obj 81 239 unpack f f;
-#X floatatom 81 261 5 0 0 0 - - -, f 5;
-#X floatatom 138 261 5 0 0 0 - - -, f 5;
-#X msg 432 148 setlength 0 0 8;
-#X msg 432 176 clear 0 0;
-#X msg 430 241 setspeedreduction 0 0 1;
+#N canvas 251 165 699 417 10;
+#X obj 82 40 tgl 40 0 empty empty Start/stop 42 30 0 18 -262144 -1
+-1 0 1;
+#X obj 81 257 route pos output;
 #N canvas 321 40 885 313 midiout 0;
 #X obj 57 50 route 0 1 2 3 4 5 6 7, f 134;
 #X obj 112 247 midiout;
@@ -51,9 +35,7 @@
 #X connect 10 0 1 0;
 #X connect 11 0 1 0;
 #X connect 12 0 0 0;
-#X restore 127 218 pd midiout;
-#X obj 239 274 r \$0.seq.in;
-#X obj 239 336 s \$0.seq.out;
+#X restore 127 288 pd midiout;
 #N canvas 0 22 450 300 metronome 0;
 #X obj 151 124 sel 1;
 #X msg 112 157 rewind;
@@ -72,28 +54,29 @@
 #X connect 6 1 5 0;
 #X connect 6 2 0 0;
 #X connect 7 0 1 0;
-#X restore 541 302 pd metronome;
-#X obj 541 329 s \$0.seq.in;
-#X obj 541 275 r \$0.metro.in;
-#X obj 239 305 sequencer;
-#X msg 542 90 songsetrow 0 0 \, songsetlength 1 \, songsetrowduration
-0 32;
-#X connect 0 0 5 0;
+#X restore 81 115 pd metronome;
+#X obj 81 196 sequencer;
+#X obj 262 197 loadbang;
+#X text 325 199 initialize with a ready to play setup;
+#N canvas 0 22 307 202 position 0;
+#X obj 107 69 unpack f f;
+#X floatatom 107 121 5 0 0 0 - - -, f 5;
+#X floatatom 164 121 5 0 0 0 - - -, f 5;
+#X obj 107 36 inlet;
+#X connect 0 0 1 0;
+#X connect 0 1 2 0;
+#X connect 3 0 0 0;
+#X coords 0 -1 1 1 100 40 1 100 100;
+#X restore 81 320 pd position;
+#X obj 97 164 r seq;
+#X msg 262 260 \; seq songsetrow 0 0 0 0 0 0 0 0 0 \, songsetlength
+1 \, songsetrowduration 0 128 \, setlength 0 0 8 \, setlength 1 0 8
+\, setlength 2 0 8 \, setlength 3 0 8 \, setlength 4 0 8 \, setlength
+5 0 8 \, setlength 6 0 8 \, setlength 7 0 8;
+#X connect 0 0 3 0;
 #X connect 1 0 7 0;
-#X connect 2 0 1 0;
-#X connect 3 0 5 0;
-#X connect 8 0 11 0;
-#X connect 9 0 6 0;
-#X connect 10 0 6 0;
-#X connect 11 0 12 0;
-#X connect 11 1 18 0;
-#X connect 12 0 13 0;
-#X connect 12 1 14 0;
-#X connect 15 0 6 0;
-#X connect 16 0 6 0;
-#X connect 17 0 6 0;
-#X connect 19 0 24 0;
-#X connect 21 0 22 0;
-#X connect 23 0 21 0;
-#X connect 24 0 20 0;
-#X connect 25 0 6 0;
+#X connect 1 1 2 0;
+#X connect 3 0 4 0;
+#X connect 4 0 1 0;
+#X connect 5 0 9 0;
+#X connect 8 0 4 0;
