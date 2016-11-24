@@ -13,7 +13,7 @@ class PatternEditController(PatternController):
         self.track = self.io.song.tracks[self.trackIndex]
         self.patternIndex = patternIndex
         self.pattern = self.track.patterns[self.patternIndex]
-        self.scroll = defaultdict(lambda: [0, 0])
+        self.scroll = defaultdict(lambda: [36, 0])
         self.renderNoteOffs = False
         self.track.addObserver(self)
         self.pattern.addObserver(self)
