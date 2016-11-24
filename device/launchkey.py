@@ -7,16 +7,16 @@ class Launchkey(object):
         self.controlMidiMap = {0x15 + i: i for i in range(8)}
 
     def onNoteEvent(self, note, velocity):
-        raise RuntimeError('method Launchkey.onXyzEvent not implemented')
+        raise RuntimeError('method Launchkey.onNoteEvent not implemented')
 
     def onPadEvent(self, row, col, velocity):
-        raise RuntimeError('method Launchkey.onXyzEvent not implemented')
+        raise RuntimeError('method Launchkey.onPadEvent not implemented')
 
     def onControlEvent(self, num, value):
-        raise RuntimeError('method Launchkey.onXyzEvent not implemented')
+        raise RuntimeError('method Launchkey.onControlEvent not implemented')
 
     def onButtonEvent(self, name, pressed):
-        raise RuntimeError('method Launchkey.onXyzEvent not implemented')
+        raise RuntimeError('method Launchkey.onButtonEvent not implemented')
 
     def writeMidi(self, port, v1, v2, v3):
         raise RuntimeError('method Launchkey.writeMidi not implemented')
