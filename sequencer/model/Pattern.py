@@ -123,8 +123,10 @@ class Pattern(object):
         if notify: self.notifyPatternChange()
 
     def getRow(self, row):
-        ncols = max(self.data[row]) if len(self.data[row]) else 0
-        return [self.get(row, col) for col in range(1 + ncols)]
+        numCols = max(self.data[row]) if len(self.data[row]) else 0
+        # make sure to always output noteColumns:
+        numCols = max(numCols, self.track.noteCols)
+        return [self.get(row, col) for col in range(1 + numCols)]
 
     def setRow(self, row, values, notify=True):
         for col, value in enumerate(values):
