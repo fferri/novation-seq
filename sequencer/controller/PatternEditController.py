@@ -34,6 +34,7 @@ class PatternEditController(PatternController):
         self.pattern = self.track.patterns[self.patternIndex]
         self.pattern.addObserver(self)
         self.track.lastSelectedPatternIndex = self.patternIndex
+        self.scroll[self.trackIndex][1] = 0
         if update:
             self.update()
 
