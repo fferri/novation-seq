@@ -8,11 +8,14 @@ class BufferedLaunchpad(Launchpad):
         self.sections = ('top', 'right', 'center')
         self.sectionCoords = {'top': [(8, i) for i in range(8)], 'right': [(i, 8) for i in range(8)], 'center': [(i, j) for i in range(8) for j in range(8)]}
         self.buffer = {k: {'default': self.emptyBuffer(), '_dev': self.emptyBuffer()} for k in self.sections}
+        self.flipRows = False
 
     def onButtonEvent(self, row, col, pressed):
         if row == 8: section = 'top'
         elif col == 8: section = 'right'
         else: section = 'center'
+        if self.buffer[section][self.currentBuffer]['invertRows']: #XXX: and 0 <= dstRow < 8:
+            row = 7 - row
         row += self.buffer[section][self.currentBuffer]['rowOffset']
         col += self.buffer[section][self.currentBuffer]['colOffset']
         self.onBufferButtonEvent(self.currentBuffer, section, row, col, pressed)
@@ -21,7 +24,12 @@ class BufferedLaunchpad(Launchpad):
         raise RuntimeError('method BufferedLaunchpad.onBufferButtonEvent not implemented')
 
     def emptyBuffer(self):
-        return {'rowOffset': 0, 'colOffset': 0, 'data': defaultdict(lambda: [0, 0])}
+        return {
+            'rowOffset': 0,
+            'colOffset': 0,
+            'invertRows': False,
+            'data': defaultdict(lambda: [0, 0])
+        }
 
     def syncBuffer(self, name):
         for section in self.sections:
@@ -34,6 +42,8 @@ class BufferedLaunchpad(Launchpad):
                     else:
                         self.buffer[section]['_dev']['data'][dstRow, dstCol] = self.buffer[section][name]['data'][srcRow, srcCol]
                     red, green = self.buffer[section]['_dev']['data'][dstRow, dstCol]
+                    if self.buffer[section][name]['invertRows']: #XXX: and 0 <= dstRow < 8:
+                        dstRow = 7 - dstRow
                     self.setLed(dstRow, dstCol, red, green)
 
     def syncCurrentBuffer(self):
@@ -51,6 +61,8 @@ class BufferedLaunchpad(Launchpad):
             keys = list(self.buffer[section][bufferName]['data'].keys())
             for key in keys:
                 del self.buffer[section][bufferName]['data'][key]
+            self.scroll(bufferName, section, 0, 0)
+            self.invertRows(bufferName, section, False)
 
     def set(self, bufferName, sectionName, row, col, r, g):
         if bufferName == '_cur': bufferName = self.currentBuffer
@@ -65,4 +77,7 @@ class BufferedLaunchpad(Launchpad):
         col = int(col)
         self.buffer[sectionName][bufferName]['rowOffset'] = row
         self.buffer[sectionName][bufferName]['colOffset'] = col
+
+    def invertRows(self, bufferName, sectionName, inv=True):
+        self.buffer[sectionName][bufferName]['invertRows'] = inv
 
