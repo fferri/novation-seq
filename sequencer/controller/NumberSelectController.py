@@ -1,13 +1,14 @@
 from LPController import *
 
 class NumberSelectController(LPController):
-    def __init__(self, parent, callback, currentValue=0, minValue=0, maxValue=64):
+    def __init__(self, parent, callback, currentValue=0, minValue=0, maxValue=64, colorFunc=None):
         self.parent = parent
         self.io = self.parent.io
         self.callback = callback
         self.currentValue = currentValue
         self.minValue = minValue
         self.maxValue = maxValue
+        self.colorFunc = colorFunc if colorFunc is not None else lambda i: [0, 2]
 
     def __str__(self):
         return '{}(parent={}, currentValue={}, minValue={}, maxValue={})'.format(self.__class__.__name__, self.parent, self.currentValue, self.minValue, self.maxValue)
@@ -17,7 +18,7 @@ class NumberSelectController(LPController):
         self.io.launchpad.clearBuffer('right')
         for v in range(max(0, self.minValue), 1 + self.maxValue):
             cur = v == self.currentValue
-            color = [2, 0] if cur else [0, 2]
+            color = [2, 0] if cur else self.colorFunc(v)
             if v == 0:
                 self.io.launchpad.set('default', 'right', row, col, *color)
             else:
