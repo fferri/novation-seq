@@ -27,17 +27,17 @@ class Launchkey(object):
                 self.onNoteEvent(data[1], data[2])
                 return
         elif port == 1:
-	    if data[0] in (0xB0, ):
-		if data[1] >= 0x15 and data[1] <= 0x1C:
-		    self.onControlEvent(self.controlMidiMap[data[1]], data[2])
+            if data[0] in (0xB0, ):
+                if data[1] >= 0x15 and data[1] <= 0x1C:
+                    self.onControlEvent(self.controlMidiMap[data[1]], data[2])
                     return
-		if data[1] >= 0x68 and data[1] <= 0x6D:
-		    self.onButtonEvent(self.buttonMidiMap[data[1]], data[2] > 0)
+                if data[1] >= 0x68 and data[1] <= 0x6D:
+                    self.onButtonEvent(self.buttonMidiMap[data[1]], data[2] > 0)
                     return
-	    elif data[0] in (0x90, 0x80) and data[1] & 0xF0 in (0x60, 0x70) and data[1] & 0x0F <= 8:
-		row = int(data[1] & 0xF0 == 0x70)
-		col = data[1] & 0x0F
-		self.onPadEvent(row, col, data[2])
+            elif data[0] in (0x90, 0x80) and data[1] & 0xF0 in (0x60, 0x70) and data[1] & 0x0F <= 8:
+                row = int(data[1] & 0xF0 == 0x70)
+                col = data[1] & 0x0F
+                self.onPadEvent(row, col, data[2])
                 return
         if self.reportUnrecognizedMessages:
             fmt = 'Launchkey: unrecognized midi data on %s iface: %02X %02X %02X'
