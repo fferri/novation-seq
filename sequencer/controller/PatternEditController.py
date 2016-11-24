@@ -3,7 +3,7 @@ from PatternAddNoteController import *
 from PatternEditNoteController import *
 from SongEditController import *
 from PatternSelectController import *
-from PatternFunctionsController import *
+from NumberSelectController import *
 from collections import defaultdict
 
 class PatternEditController(PatternController):
@@ -75,10 +75,12 @@ class PatternEditController(PatternController):
         self.io.launchpad.invertRows('default','center')
         self.io.launchpad.scroll('default','center', *self.scroll[self.trackIndex])
 
+        # draw playhead
         if self.track.playHead.patternIndex == self.patternIndex:
             for row in range(128):
                 self.io.launchpad.set('default', 'center', row, self.track.playHead.patternRow, 1, 0)
 
+        # draw notes
         for note, intervals in self.pattern.noteGetIntervals().items():
             for (rowStart, rowStop) in intervals:
                 self.io.launchpad.set('default', 'center', note, rowStart, 2, 3)
@@ -86,6 +88,17 @@ class PatternEditController(PatternController):
                     self.io.launchpad.set('default', 'center', note, row, 0, 1)
                 if self.renderNoteOffs:
                     self.io.launchpad.set('default', 'center', note, rowStop, 1, 0)
+
+        # turn on buttons with a function
+        for col in range(4):
+            self.io.launchpad.set('default', 'top', 8, col, 2 * int(self.shift), 1)
+        self.io.launchpad.set('default', 'top', 8, 7, 2, 1)
+        if self.shift:
+            self.io.launchpad.set('default', 'top', 8, 5, 2, 1)
+            self.io.launchpad.set('default', 'top', 8, 6, 2, 1)
+        else:
+            self.io.launchpad.set('default', 'top', 8, 4, 0, 1)
+            self.io.launchpad.set('default', 'top', 8, 5, 0, 1)
 
         if sync:
             self.io.launchpad.syncBuffer('default')
@@ -102,26 +115,39 @@ class PatternEditController(PatternController):
                 self.io.setLPController(PatternAddNoteController(self, patternRow, note))
             return
         if section == 'top' and row == 8 and col in range(4):
-            self.incrVScroll(int(col == 0) - int(col == 1)) # flipped
-            self.incrHScroll(int(col == 3) - int(col == 2))
+            rowStep, colStep = (1, 1) if self.shift else (8, 8)
+            self.incrVScroll(rowStep * (int(col == 0) - int(col == 1))) # flipped
+            self.incrHScroll(colStep * (int(col == 3) - int(col == 2)))
             self.io.launchpad.scroll('default', 'center', *self.scroll[self.trackIndex])
             self.io.launchpad.syncBuffer('default')
             return
-        if section == 'top' and row == 8 and col == 4:
+        if section == 'top' and row == 8 and col == 4 and not self.shift:
             self.io.setLPController(SongEditController(self))
             return
-        if section == 'top' and row == 8 and col == 5:
+        if section == 'top' and row == 8 and col == 5 and not self.shift:
             cb = lambda trkIdx, patIdx: self.selectPattern(trkIdx, patIdx, True)
             v = self.track.lastSelectedPatternIndex
             self.io.setLPController(PatternSelectController(self, self.trackIndex, cb, v, False))
             return
+        if section == 'top' and row == 8 and col == 5 and self.shift:
+            self.shift = False # otherwise shift gets stuck
+            cb = lambda n: self.pattern.setLength(n)
+            self.io.setLPController(NumberSelectController(self, cb, self.pattern.getLength(), 1, 64))
+            return
+        if section == 'top' and row == 8 and col == 6 and self.shift:
+            self.shift = False # otherwise shift gets stuck
+            cb = lambda n: self.pattern.setSpeedReduction(n)
+            self.io.setLPController(NumberSelectController(self, cb, self.pattern.getSpeedReduction(), 1, 32))
+            return
         if section == 'top' and row == 8 and col == 7:
             self.shift = True
+            self.update()
             return
 
     def onLPButtonRelease(self, buf, section, row, col):
         if buf != 'default': return
         if section == 'top' and row == 8 and col == 7:
             self.shift = False
+            self.update()
             return
 

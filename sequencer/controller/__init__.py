@@ -6,7 +6,6 @@ from PatternAddNoteController import *
 from PatternController import *
 from PatternEditController import *
 from PatternEditNoteController import *
-from PatternFunctionsController import *
 from PatternSelectController import *
 from SongEditController import *
 from TracksController import *
