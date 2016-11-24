@@ -1,0 +1,147 @@
+#N canvas 438 228 735 468 10;
+#X obj 36 51 sequencer;
+#X obj 36 73 print sequencer;
+#X obj 36 29 receive sequencer;
+#X text 177 31 sequencer stores an arrangement in a very common format
+\, composed of 8 tracks and 64 patterns per track (NxM grids) \, and
+a global sequence of patterns (8xL grid).;
+#X obj 41 123 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 123 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 183 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 183 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 243 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 243 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 303 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 303 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 363 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 363 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 423 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 423 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 483 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 483 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 543 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 543 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 603 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 603 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 663 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 663 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 723 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 723 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 783 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 783 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 843 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 843 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 903 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 903 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 963 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 963 cnv 15 400 40 empty empty empty 20 12 0 14 -204800 -66577
+0;
+#X obj 41 1023 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 1023 cnv 15 400 40 empty empty empty 20 12 0 14 -204800
+-66577 0;
+#X obj 41 1083 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 1083 cnv 15 400 40 empty empty empty 20 12 0 14 -204800
+-66577 0;
+#X obj 41 1143 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 1143 cnv 15 400 40 empty empty empty 20 12 0 14 -204800
+-66577 0;
+#X obj 41 1203 cnv 15 260 40 empty empty empty 20 12 0 14 -261682 -66577
+0;
+#X obj 302 1203 cnv 15 400 40 empty empty empty 20 12 0 14 -204800
+-66577 0;
+#X msg 46 128 \; sequencer init;
+#X msg 46 188 \; sequencer songset 0 0 0;
+#X msg 46 248 \; sequencer songget 0 0;
+#X msg 46 308 \; sequencer songgetrow 0;
+#X msg 46 368 \; sequencer songsetrow 0 0 10 20;
+#X text 307 125 (re-)initialize IO devices;
+#X msg 46 548 \; sequencer songclear;
+#X text 307 185 set the value of a cell in the song grid;
+#X text 307 205 (songset <row> <col> <value>);
+#X text 307 265 (songget <row> <col>);
+#X text 307 245 get the value of a cell in the song grid;
+#X text 306 326 (songgetrow <row>);
+#X text 306 306 get an entire row in the song grid;
+#X text 306 386 (songsetrow <row> <value1> <value2> ...);
+#X text 306 366 set an entire row in the song grid;
+#X text 306 545 clear data in the song grid;
+#X text 307 145 (init);
+#X msg 46 608 \; sequencer songgetlength;
+#X msg 46 668 \; sequencer songsetlength 2;
+#X text 306 605 get the length of the song;
+#X text 306 625 (songgetlength);
+#X text 306 665 set the length of the song;
+#X text 306 685 (songsetlength <length>);
+#X msg 46 728 \; sequencer get 2 0 4 0;
+#X msg 46 788 \; sequencer set 2 0 4 0 60;
+#X text 306 726 get the value of a cell in a pattern;
+#X text 306 746 (get <track> <pattern> <row> <col>);
+#X text 306 785 set the value of a cell in a pattern;
+#X text 306 805 (set <track> <pattern> <row> <col> <value>);
+#X text 304 926 (setrow <track> <pattern> <row> <value1> <value2> ...)
+;
+#X text 304 906 set an entire row in a pattern;
+#X text 305 866 (getrow <track> <pattern> <row>);
+#X text 305 846 get an entire row in a pattern;
+#X text 305 966 get the length of a pattern;
+#X text 304 1025 set the length of a pattern;
+#X text 304 1045 (setlength <track> <pattern> <length>);
+#X text 305 986 (getlength <track> <pattern>);
+#X msg 46 848 \; sequencer getrow 2 0 4;
+#X msg 46 908 \; sequencer setrow 2 0 4 10 20 30;
+#X msg 46 1028 \; sequencer setlength 2 0 8;
+#X msg 46 968 \; sequencer getlength 2 0;
+#X text 304 1085 clear data in a pattern;
+#X text 304 1105 (clear <track> <pattern>);
+#X msg 46 1088 \; sequencer clear 2 0;
+#X text 306 565 (songclear);
+#X msg 46 1148 \; sequencer getspeedreduction 2 0;
+#X text 305 1165 (getspeedreduction <track> <pattern>);
+#X text 305 1225 (setspeedreduction <track> <pattern> <factor>);
+#X msg 46 1208 \; sequencer setspeedreduction 2 0 2;
+#X text 305 1145 get the speed reduction factor of a pattern;
+#X text 305 1205 set the speed reduction factor of a pattern;
+#X text 306 426 get the duration of a row in the song grid;
+#X text 305 486 set the duration of a row in the song grid;
+#X msg 46 428 \; sequencer getrowduration 0;
+#X msg 46 488 \; sequencer setrowduration 0 32;
+#X text 306 446 (getrowduration <row>);
+#X text 305 506 (setrowduration <row> <duration>);
+#X text 475 1259 Copyright (C) 2016 Federico Ferri http://github.com/fferri/novation-seq
+;
+#X obj 41 1257 cnv 15 100 60 empty empty empty 20 12 0 14 -262144 -66577
+0;
+#X connect 0 0 1 0;
+#X connect 2 0 0 0;
