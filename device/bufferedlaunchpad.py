@@ -36,14 +36,14 @@ class BufferedLaunchpad(Launchpad):
             for (dstRow, dstCol) in self.sectionCoords[section]:
                 srcRow = self.buffer[section][name]['rowOffset'] + dstRow
                 srcCol = self.buffer[section][name]['colOffset'] + dstCol
+                if self.buffer[section][name]['invertRows']:
+                    dstRow = 7 - dstRow
                 if self.buffer[section]['_dev']['data'][dstRow, dstCol] != self.buffer[section][name]['data'][srcRow, srcCol]:
                     if self.buffer[section][name]['data'][srcRow, srcCol] == [0, 0]:
                         del self.buffer[section]['_dev']['data'][dstRow, dstCol]
                     else:
                         self.buffer[section]['_dev']['data'][dstRow, dstCol] = self.buffer[section][name]['data'][srcRow, srcCol]
                     red, green = self.buffer[section]['_dev']['data'][dstRow, dstCol]
-                    if self.buffer[section][name]['invertRows']: #XXX: and 0 <= dstRow < 8:
-                        dstRow = 7 - dstRow
                     self.setLed(dstRow, dstCol, red, green)
 
     def syncCurrentBuffer(self):
