@@ -34,9 +34,30 @@ class PatternEditController(PatternController):
         self.pattern = self.track.patterns[self.patternIndex]
         self.pattern.addObserver(self)
         self.track.lastSelectedPatternIndex = self.patternIndex
-        self.scroll[self.trackIndex][1] = 0
+        self.setHScroll(0)
         if update:
             self.update()
+
+    def setVScroll(self, rowOffset):
+        self.scroll[self.trackIndex][0] = max(1, min(127, rowOffset))
+
+    def setHScroll(self, colOffset):
+        l = self.pattern.getLength()
+        self.scroll[self.trackIndex][1] = max(0, min(max(0, l - 8), colOffset))
+
+    def setScroll(self, rowOffset, colOffset):
+        self.setVScroll(rowOffset)
+        self.setHScroll(colOffset)
+
+    def incrVScroll(self, deltaRowOffset):
+        self.setVScroll(self.scroll[self.trackIndex][0] + deltaRowOffset)
+
+    def incrHScroll(self, deltaColOffset):
+        self.setHScroll(self.scroll[self.trackIndex][1] + deltaColOffset)
+
+    def incrScroll(self, deltaRowOffset, deltaColOffset):
+        self.incrVScroll(deltaRowOffset)
+        self.incrHScroll(deltaColOffset)
 
     def onTrackStatusChange(self, trackIndex, volume, muted, active):
         if active == False:
@@ -83,10 +104,8 @@ class PatternEditController(PatternController):
                 self.io.setLPController(PatternAddNoteController(self, patternRow, note))
         elif section == 'top' and row == 8:
             if col in range(4):
-                self.scroll[self.trackIndex][0] += int(col == 0) - int(col == 1) # flipped
-                self.scroll[self.trackIndex][1] += int(col == 3) - int(col == 2)
-                self.scroll[self.trackIndex][0] = max(0, min(127, self.scroll[self.trackIndex][0]))
-                self.scroll[self.trackIndex][1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[self.trackIndex][1]))
+                self.incrVScroll(int(col == 0) - int(col == 1)) # flipped
+                self.incrHScroll(int(col == 3) - int(col == 2))
                 self.io.launchpad.scroll('default', 'center', *self.scroll[self.trackIndex])
                 self.io.launchpad.syncBuffer('default')
                 return
