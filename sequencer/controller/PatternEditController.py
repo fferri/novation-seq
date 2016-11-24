@@ -73,12 +73,18 @@ class PatternEditController(PatternController):
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
         self.io.launchpad.invertRows('default','center')
+        self.io.launchpad.invertRows('default','right')
         self.io.launchpad.scroll('default','center', *self.scroll[self.trackIndex])
+        self.io.launchpad.scroll('default','right', self.scroll[self.trackIndex][0], 0)
 
         # draw playhead
         if self.track.playHead.patternIndex == self.patternIndex:
             for row in range(128):
                 self.io.launchpad.set('default', 'center', row, self.track.playHead.patternRow, 1, 0)
+
+        # draw active notes
+        for note in self.track.activeNotes.get():
+            self.io.launchpad.set('default', 'right', note, 8, 1, 0)
 
         # draw notes
         for note, intervals in self.pattern.noteGetIntervals().items():

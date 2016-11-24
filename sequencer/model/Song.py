@@ -103,6 +103,7 @@ class Song(object):
                     output[trackIndex] = pattern.getRow(track.playHead.patternRow)
                     if track.muted:
                         output[trackIndex] = [-1 for _ in output[trackIndex]]
+                    track.activeNotes.track(output[trackIndex])
             track.notifyPlayHeadChange()
         if self.lastOutputRow != self.currentRow:
             self.notifyCurrentRowChange()
