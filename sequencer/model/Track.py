@@ -7,6 +7,7 @@ class Track(object):
         self.song = song
         self.trackIndex = trackIndex
         self.patterns = [Pattern(self, patternIndex) for patternIndex in range(64)]
+        self.noteCols = list(range(8)) # default: 8-note polyphony, using the first 8 columns
         self.playHead = PlayHead()
         self.playHeadPrev = PlayHead()
         self.observers = weakref.WeakKeyDictionary()
@@ -30,6 +31,13 @@ class Track(object):
         observers = list(self.observers.keys())
         for observer in observers:
             observer.onTrackStatusChange(self.trackIndex, self.volume, self.muted, self.isActive())
+
+    def getNoteColumns(self):
+        return self.noteCols[:]
+
+    def setNoteColumns(self, noteCols):
+        self.noteCols = noteCols[:]
+        # TODO: self.notifyTrackChange()
 
     def setVolume(self, volume):
         volume = max(0, min(127, int(volume)))

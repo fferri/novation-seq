@@ -8,11 +8,6 @@ class Pattern(object):
         self.length = length
         self.speedReduction = 1
         self.data = defaultdict(lambda: defaultdict(lambda: -1))
-        # needed by note* methods. many notes -> polyphonic (voice stealing)
-        # e.g.:
-        # noteCols = [0]        # (monophonic)
-        # noteCols = [0,1,2,3]  # (4-notes poliphony)
-        self.noteCols = list(range(8))
         self.observers = weakref.WeakKeyDictionary()
 
     def addObserver(self, callable_):
@@ -26,13 +21,6 @@ class Pattern(object):
         for observer in observers:
             observer.onPatternChange(self.track.trackIndex, self.patternIndex)
 
-    def getNoteColumns(self):
-        return self.noteCols[:]
-
-    def setNoteColumns(self, noteCols):
-        self.noteCols = noteCols[:]
-        self.notifyPatternChange()
-
     def noteAdd(self, row, note, duration, velocity=100):
         if note < 1: return
         startRow = int(row)
@@ -45,7 +33,7 @@ class Pattern(object):
 
     def noteGetColumn(self, row, note):
         if note < 1: return
-        for noteCol in self.noteCols:
+        for noteCol in self.track.noteCols:
             if self.get(row, noteCol) == note:
                 return noteCol
 
@@ -70,13 +58,13 @@ class Pattern(object):
         self.notifyPatternChange()
 
     def noteFreeColumn(self, row, endRow):
-        for noteCol in self.noteCols:
+        for noteCol in self.track.noteCols:
             if all(self.get(row, noteCol) == -1 for row in range(row, endRow)):
                 return noteCol
 
     def noteGetIntervals(self):
         ret = {}
-        for col in self.noteCols:
+        for col in self.track.noteCols:
             for row in range(self.getLength()):
                 v = self.get(row, col)
                 if v > 0:

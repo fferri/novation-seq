@@ -5,7 +5,7 @@ s = Song()
 t = Track(s, 0)
 p = t.patterns[0]
 p.setLength(8)
-p.setNoteColumns([0,1,2])
+t.setNoteColumns([0,1,2])
 p.noteAdd(0,10,1)
 p.noteAdd(1,10,1)
 p.noteAdd(2,10,1)
