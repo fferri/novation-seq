@@ -3,8 +3,6 @@
 #X msg 29 70 getrow 0 0 \$1;
 #X msg 29 43 0 \, 1 \, 2 \, 3 \, 4 \, 5 \, 6 \, 7;
 #X msg 428 37 dump;
-#X msg 542 90 songsetrow 0 0 \, songsetlength 1 \, setrowduration 0
-32;
 #X obj 224 40 tgl 15 0 \$0.metro.in \$0.metro.toggle.in Start/stop_metronome
 17 7 0 10 -262144 -1 -1 0 1;
 #X obj 428 82 s \$0.seq.in;
@@ -79,23 +77,25 @@
 #X obj 541 329 s \$0.seq.in;
 #X obj 541 275 r \$0.metro.in;
 #X obj 239 305 sequencer;
-#X connect 0 0 6 0;
-#X connect 1 0 8 0;
+#X msg 542 90 songsetrow 0 0 \, songsetlength 1 \, songsetrowduration
+0 32;
+#X connect 0 0 5 0;
+#X connect 1 0 7 0;
 #X connect 2 0 1 0;
-#X connect 3 0 6 0;
-#X connect 4 0 7 0;
-#X connect 9 0 12 0;
-#X connect 10 0 7 0;
-#X connect 11 0 7 0;
+#X connect 3 0 5 0;
+#X connect 8 0 11 0;
+#X connect 9 0 6 0;
+#X connect 10 0 6 0;
+#X connect 11 0 12 0;
 #X connect 12 0 13 0;
+#X connect 12 1 19 0;
 #X connect 13 0 14 0;
-#X connect 13 1 20 0;
-#X connect 14 0 15 0;
-#X connect 14 1 16 0;
-#X connect 17 0 7 0;
-#X connect 18 0 7 0;
-#X connect 19 0 7 0;
-#X connect 21 0 26 0;
-#X connect 23 0 24 0;
-#X connect 25 0 23 0;
-#X connect 26 0 22 0;
+#X connect 13 1 15 0;
+#X connect 16 0 6 0;
+#X connect 17 0 6 0;
+#X connect 18 0 6 0;
+#X connect 20 0 25 0;
+#X connect 22 0 23 0;
+#X connect 24 0 22 0;
+#X connect 25 0 21 0;
+#X connect 26 0 6 0;
