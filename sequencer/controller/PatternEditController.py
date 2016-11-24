@@ -4,6 +4,7 @@ from PatternEditNoteController import *
 from SongEditController import *
 from PatternSelectController import *
 from PatternFunctionsController import *
+from collections import defaultdict
 
 class PatternEditController(PatternController):
     def __init__(self, io, trackIndex, patternIndex):
@@ -12,7 +13,7 @@ class PatternEditController(PatternController):
         self.track = self.io.song.tracks[self.trackIndex]
         self.patternIndex = patternIndex
         self.pattern = self.track.patterns[self.patternIndex]
-        self.scroll = [0, 0]
+        self.scroll = defaultdict(lambda: [0, 0])
         self.renderNoteOffs = False
         self.track.addObserver(self)
         self.pattern.addObserver(self)
@@ -28,7 +29,6 @@ class PatternEditController(PatternController):
             self.trackIndex = self.io.song.activeTrack.trackIndex
             self.track = self.io.song.tracks[self.trackIndex]
             self.track.addObserver(self)
-            self.scroll = [0, 0]
         self.pattern.removeObserver(self)
         self.patternIndex = patternIndex
         self.pattern = self.track.patterns[self.patternIndex]
@@ -50,7 +50,7 @@ class PatternEditController(PatternController):
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
         self.io.launchpad.invertRows('default','center')
-        self.io.launchpad.scroll('default','center', *self.scroll)
+        self.io.launchpad.scroll('default','center', *self.scroll[self.trackIndex])
 
         if self.track.playHead.patternIndex == self.patternIndex:
             for row in range(128):
@@ -82,11 +82,11 @@ class PatternEditController(PatternController):
                 self.io.setLPController(PatternAddNoteController(self, patternRow, note))
         elif section == 'top' and row == 8:
             if col in range(4):
-                self.scroll[0] += int(col == 0) - int(col == 1) # flipped
-                self.scroll[1] += int(col == 3) - int(col == 2)
-                self.scroll[0] = max(0, min(127, self.scroll[0]))
-                self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
-                self.io.launchpad.scroll('default', 'center', *self.scroll)
+                self.scroll[self.trackIndex][0] += int(col == 0) - int(col == 1) # flipped
+                self.scroll[self.trackIndex][1] += int(col == 3) - int(col == 2)
+                self.scroll[self.trackIndex][0] = max(0, min(127, self.scroll[self.trackIndex][0]))
+                self.scroll[self.trackIndex][1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[self.trackIndex][1]))
+                self.io.launchpad.scroll('default', 'center', *self.scroll[self.trackIndex])
                 self.io.launchpad.syncBuffer('default')
                 return
             if col == 4:
