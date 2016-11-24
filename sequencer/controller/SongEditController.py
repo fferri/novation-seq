@@ -20,6 +20,8 @@ class SongEditController(LPController):
 
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
+        self.io.launchpad.scroll('default', 'center', self.vscroll, 0)
+        self.io.launchpad.scroll('default', 'right', self.vscroll, 0)
 
         for row in range(self.io.song.getLength()):
             curRow = row == self.io.song.currentRow
@@ -47,8 +49,8 @@ class SongEditController(LPController):
         elif section == 'top' and row == 8:
             if col in range(2):
                 self.vscroll += int(col == 1) - int(col == 0)
-                self.io.launchpad.scroll('default', 'center', vscroll, 0)
-                self.io.launchpad.scroll('default', 'right', vscroll, 0)
+                self.io.launchpad.scroll('default', 'center', self.vscroll, 0)
+                self.io.launchpad.scroll('default', 'right', self.vscroll, 0)
                 self.io.launchpad.syncBuffer('default')
                 return
             if col == 4:

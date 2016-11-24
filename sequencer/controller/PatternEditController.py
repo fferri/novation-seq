@@ -49,6 +49,7 @@ class PatternEditController(PatternController):
 
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
+        self.io.launchpad.invertRows('default','center')
         self.io.launchpad.scroll('default','center', *self.scroll)
 
         if self.track.playHead.patternIndex == self.patternIndex:
@@ -81,7 +82,7 @@ class PatternEditController(PatternController):
                 self.io.setLPController(PatternAddNoteController(self, patternRow, note))
         elif section == 'top' and row == 8:
             if col in range(4):
-                self.scroll[0] += int(col == 1) - int(col == 0)
+                self.scroll[0] += int(col == 0) - int(col == 1) # flipped
                 self.scroll[1] += int(col == 3) - int(col == 2)
                 self.scroll[0] = max(0, min(127, self.scroll[0]))
                 self.scroll[1] = max(0, min(max(0, self.pattern.getLength() - 8), self.scroll[1]))
