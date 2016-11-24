@@ -15,30 +15,30 @@ class Launchpad(object):
         self.onButtonEvent(row, col, data[2] > 0)
 
     def clip(self, x, xmin, xmax):
-        return max(xmin, min(xmax, x))
+        return int(max(xmin, min(xmax, x)))
 
     def reset(self):
         self.writeMidi(0xB0, 0x00, 0x00)
 
     def makeValue(self, r, g, clear=False, copy=False):
-        r = int(self.clip(r, 0, 3))
-        g = int(self.clip(g, 0, 3))
+        r = self.clip(r, 0, 3)
+        g = self.clip(g, 0, 3)
         clear = int(clear)
         copy = int(copy)
         return r | (g << 4) | (clear << 3) | (copy << 2)
 
     def setLed(self, row, col, r, g, clear=False, copy=False):
-        row = int(self.clip(row, 0, 8))
-        col = int(self.clip(col, 0, 8))
-        r = int(self.clip(r, 0, 3))
-        g = int(self.clip(g, 0, 3))
+        row = self.clip(row, 0, 8)
+        col = self.clip(col, 0, 8)
+        r = self.clip(r, 0, 3)
+        g = self.clip(g, 0, 3)
         if row == 8: status, addr = 0xB0, 0x68 + col # top row
         else: status, addr = 0x90, (row & 0x0F) << 4 | 0x0F & col
         self.writeMidi(status, addr, self.makeValue(r, g, clear, copy))
 
     def setBuffers(self, displaying, updating, flash=False, copy=False):
-        displaying = int(self.clip(displaying, 0, 1))
-        updating = int(self.clip(updating, 0, 1))
+        displaying = self.clip(displaying, 0, 1)
+        updating = self.clip(updating, 0, 1)
         val = 1 << 5
         val |= displaying
         val |= updating << 2
@@ -50,8 +50,8 @@ class Launchpad(object):
         self.writeMidi(0xB0, 0x00, 0x7D + self.clip(val, 0, 2))
 
     def setDutyCycle(self, num, denom):
-        num = int(self.clip(num, 1, 16))
-        denom = int(self.clip(denom, 3, 18))
+        num = self.clip(num, 1, 16)
+        denom = self.clip(denom, 3, 18)
         h = int(num >= 9)
         self.writeMidi(0xB0, 0x1E + h, 16 * (num - 1 - 8 * h) + denom - 3)
 

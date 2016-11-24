@@ -44,7 +44,7 @@ class Launchkey(object):
             print(fmt % (self.portName[port]) + tuple(data))
 
     def clip(self, x, xmin, xmax):
-        return max(xmin, min(xmax, x))
+        return int(max(xmin, min(xmax, x)))
 
     def reset(self):
         self.writeMidi(1, 0xB0, 0x00, 0x00)
@@ -53,17 +53,17 @@ class Launchkey(object):
         self.writeMidi(1, 0x90, 0x0C, 0x7F * int(enable))
 
     def makeValue(self, r, g, clear=False, copy=False):
-        r = int(self.clip(r, 0, 3))
-        g = int(self.clip(g, 0, 3))
+        r = self.clip(r, 0, 3)
+        g = self.clip(g, 0, 3)
         clear = int(clear)
         copy = int(copy)
         return r | (g << 4) | (clear << 3) | (copy << 2)
 
     def setLed(self, row, col, r, g):
-        row = int(self.clip(row, 0, 1))
-        col = int(self.clip(col, 0, 8))
-        r = int(self.clip(r, 0, 3))
-        g = int(self.clip(g, 0, 3))
+        row = self.clip(row, 0, 1)
+        col = self.clip(col, 0, 8)
+        r = self.clip(r, 0, 3)
+        g = self.clip(g, 0, 3)
         status, addr = 0x90, 0x60 + row * 0x10 + col
         val = (r & 3) | ((g & 3) << 4)
         self.writeMidi(1, status, addr, val)
