@@ -125,7 +125,7 @@ class Pattern(object):
     def getRow(self, row):
         numCols = max(self.data[row]) if len(self.data[row]) else 0
         # make sure to always output noteColumns:
-        numCols = max(numCols, self.track.noteCols)
+        numCols = max(numCols, max(self.track.noteCols))
         return [self.get(row, col) for col in range(1 + numCols)]
 
     def setRow(self, row, values, notify=True):
