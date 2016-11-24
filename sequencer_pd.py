@@ -95,10 +95,10 @@ class IO(pyext._class):
             elif pdport == self.launchkeyPorts[1]:
                 self.launchkey.onMidiData(1, self.midiBuffer[pdport])
 
-    def getrowduration_1(self, row):
+    def songgetrowduration_1(self, row):
         self._outlet(1, ['rowduration', row, self.song.getRowDuration(row)])
 
-    def setrowduration_1(self, row, duration):
+    def songsetrowduration_1(self, row, duration):
         self.song.setRowDuration(row, duration)
 
     def rewind_1(self):
