@@ -17,6 +17,7 @@ class PatternEditController(PatternController):
         self.renderNoteOffs = False
         self.track.addObserver(self)
         self.pattern.addObserver(self)
+        self.shift = False
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
@@ -91,10 +92,7 @@ class PatternEditController(PatternController):
 
     def onLPButtonPress(self, buf, section, row, col):
         super(PatternEditController, self).onLPButtonPress(buf, section, row, col)
-        buf = str(buf)
-        section = str(section)
-        if buf != 'default':
-            return
+        if buf != 'default': return
         if section == 'center':
             patternRow = col
             note = row
@@ -102,22 +100,28 @@ class PatternEditController(PatternController):
                 self.io.setLPController(PatternEditNoteController(self, patternRow, note))
             elif not self.pattern.noteIsPlayingAt(patternRow, note):
                 self.io.setLPController(PatternAddNoteController(self, patternRow, note))
-        elif section == 'top' and row == 8:
-            if col in range(4):
-                self.incrVScroll(int(col == 0) - int(col == 1)) # flipped
-                self.incrHScroll(int(col == 3) - int(col == 2))
-                self.io.launchpad.scroll('default', 'center', *self.scroll[self.trackIndex])
-                self.io.launchpad.syncBuffer('default')
-                return
-            if col == 4:
-                self.io.setLPController(SongEditController(self))
-                return
-            if col == 5:
-                cb = lambda trkIdx, patIdx: self.selectPattern(trkIdx, patIdx, True)
-                v = self.track.lastSelectedPatternIndex
-                self.io.setLPController(PatternSelectController(self, self.trackIndex, cb, v, False))
-                return
-            if col == 7:
-                self.io.setLPController(PatternFunctionsController(self))
-                return
+            return
+        if section == 'top' and row == 8 and col in range(4):
+            self.incrVScroll(int(col == 0) - int(col == 1)) # flipped
+            self.incrHScroll(int(col == 3) - int(col == 2))
+            self.io.launchpad.scroll('default', 'center', *self.scroll[self.trackIndex])
+            self.io.launchpad.syncBuffer('default')
+            return
+        if section == 'top' and row == 8 and col == 4:
+            self.io.setLPController(SongEditController(self))
+            return
+        if section == 'top' and row == 8 and col == 5:
+            cb = lambda trkIdx, patIdx: self.selectPattern(trkIdx, patIdx, True)
+            v = self.track.lastSelectedPatternIndex
+            self.io.setLPController(PatternSelectController(self, self.trackIndex, cb, v, False))
+            return
+        if section == 'top' and row == 8 and col == 7:
+            self.shift = True
+            return
+
+    def onLPButtonRelease(self, buf, section, row, col):
+        if buf != 'default': return
+        if section == 'top' and row == 8 and col == 7:
+            self.shift = False
+            return
 
