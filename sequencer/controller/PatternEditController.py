@@ -20,6 +20,13 @@ class PatternEditController(PatternController):
         self.pattern.addObserver(self)
         self.shift = False
         self.noteMap = defaultdict(NoteMapping)
+        self.trackScale = defaultdict(int)
+        self.scales = [NoteMapping()]
+        self.scaleColor = [[1,0]]
+        for root in range(12):
+            for scale, color in (('major', [1,1]), ('minor', [0,1])):
+                self.scales.append(NoteMapping(enumerate(getattr(scales, scale)(root))))
+                self.scaleColor.append(color)
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
@@ -72,14 +79,40 @@ class PatternEditController(PatternController):
         if self.patternIndex in (old.patternIndex, new.patternIndex):
             self.io.lpcontroller.update()
 
+    def setScale(self, i):
+        # try to maintain scroll (i.e. see the same note) after changing scale:
+        # (if the scale is very nonlinear this isn't going to work very well)
+        getVisibleNotes = lambda row0: [self.row2note(row0 + r) for r in range(8)]
+        visibleNotes = getVisibleNotes(self.scroll[self.trackIndex][0])
+        # change scale
+        self.trackScale[self.trackIndex] = i
+        # look up note row in new scale:
+        for j in (0, -1, 1, -2, 2, -3, 3, -4, 4, -5, 5, -6, 6, -7, 7):
+            rows = self.note2rows(visibleNotes[0])
+            if len(rows) == 1:
+                self.setVScroll(rows[0])
+                break
+            elif len(rows) > 1:
+                # if multiple rows contain the first note, pick the row which shows
+                # the maximum number of notes visible with the previous scale:
+                vn0 = set(visibleNotes)
+                scoredRows = map(lambda r: (len(vn0 & set(getVisibleNotes(r))), r), rows)
+                bestRow, bestScore = max(scoredRows)
+                self.setVScroll(bestRow)
+                break
+        self.update()
+
+    def getScaleColor(self, i):
+        return self.scaleColor[i]
+
     def row2note(self, row):
-        note = self.noteMap[self.trackIndex].getMidiNote(row)
-        print('row2note: %s --> %s' % (row, note))
+        mapping = self.scales[self.trackScale[self.trackIndex]]
+        note = mapping.getMidiNote(row)
         return note
 
     def note2rows(self, note):
-        rows = self.noteMap[self.trackIndex].getGridRows(note)
-        print('note2rows: %s --> %s' % (note, rows))
+        mapping = self.scales[self.trackScale[self.trackIndex]]
+        rows = mapping.getGridRows(note)
         return rows
 
     def update(self, sync=True):
@@ -114,6 +147,7 @@ class PatternEditController(PatternController):
             self.io.launchpad.set('default', 'top', 8, col, 2 * int(self.shift), 1)
         self.io.launchpad.set('default', 'top', 8, 7, 2, 1)
         if self.shift:
+            self.io.launchpad.set('default', 'top', 8, 4, 2, 1)
             self.io.launchpad.set('default', 'top', 8, 5, 2, 1)
             self.io.launchpad.set('default', 'top', 8, 6, 2, 1)
         else:
@@ -148,6 +182,11 @@ class PatternEditController(PatternController):
             cb = lambda trkIdx, patIdx: self.selectPattern(trkIdx, patIdx, True)
             v = self.track.lastSelectedPatternIndex
             self.io.setLPController(PatternSelectController(self, self.trackIndex, cb, v, False))
+            return
+        if section == 'top' and row == 8 and col == 4 and self.shift:
+            self.shift = False # otherwise shift gets stuck
+            cb = lambda n: self.setScale(n)
+            self.io.setLPController(NumberSelectController(self, cb, self.trackScale[self.trackIndex], 0, len(self.scales) - 1, colorFunc=self.getScaleColor))
             return
         if section == 'top' and row == 8 and col == 5 and self.shift:
             self.shift = False # otherwise shift gets stuck
