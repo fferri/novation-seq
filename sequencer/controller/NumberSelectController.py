@@ -15,7 +15,6 @@ class NumberSelectController(LPController):
 
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
-        self.io.launchpad.clearBuffer('right')
         for v in range(max(0, self.minValue), 1 + self.maxValue):
             cur = v == self.currentValue
             color = [2, 0] if cur else self.colorFunc(v)
@@ -26,7 +25,6 @@ class NumberSelectController(LPController):
                 self.io.launchpad.set('default', 'center', row, col, *color)
         if sync:
             self.io.launchpad.syncBuffer('default')
-            self.io.launchpad.syncBuffer('right')
 
     def onLPButtonPress(self, buf, section, row, col):
         super(NumberSelectController, self).onLPButtonPress(buf, section, row, col)
