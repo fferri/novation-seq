@@ -83,6 +83,10 @@ class IO(pyext._class):
         self.lkcontroller = c
         self.lkcontroller.update()
 
+    def writeMidi(self, v1, v2, v3):
+        for v in (v1, v2, v3):
+            self._outlet(1, ['midi', self.midiOutPort, v])
+
     def midi_1(self, pdport, f):
         if pdport not in self.midiBuffer or f & 0x80:
             self.midiBuffer[pdport] = []

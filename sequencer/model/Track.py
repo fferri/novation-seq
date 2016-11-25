@@ -1,6 +1,7 @@
 from Pattern import *
 from PlayHead import *
 from sequencer.util import ActiveNotesTracker
+from collections import defaultdict
 import weakref
 
 class Track(object):
@@ -16,6 +17,7 @@ class Track(object):
         self.muted = False
         self.lastSelectedPatternIndex = 0
         self.activeNotes = ActiveNotesTracker()
+        self.liveNotes = defaultdict(bool)
 
     def addObserver(self, callable_):
         self.observers[callable_] = 1

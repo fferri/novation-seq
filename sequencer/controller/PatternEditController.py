@@ -5,9 +5,10 @@ from SongEditController import *
 from PatternSelectController import *
 from NumberSelectController import *
 from sequencer.util import NoteMapping, scales
+from LKController import *
 from collections import defaultdict
 
-class PatternEditController(PatternController):
+class PatternEditController(PatternController, LKController):
     def __init__(self, io, trackIndex, patternIndex):
         self.io = io
         self.trackIndex = trackIndex
@@ -132,6 +133,10 @@ class PatternEditController(PatternController):
         for note in self.track.activeNotes.get():
             for row in self.note2rows(note):
                 self.io.launchpad.set('default', 'right', row, 8, 1, 0)
+        for note, active in self.track.liveNotes.items():
+            if not active: continue
+            for row in self.note2rows(note):
+                self.io.launchpad.set('default', 'right', row, 8, 0, 3)
 
         # draw notes
         for note, intervals in self.pattern.noteGetIntervals().items():
@@ -210,4 +215,14 @@ class PatternEditController(PatternController):
             self.shift = False
             self.update()
             return
+
+    def onNoteOn(self, note, velocity):
+        self.io.writeMidi(0x90 + self.track.trackIndex, note, velocity)
+        self.track.liveNotes[note] = True
+        self.update()
+
+    def onNoteOff(self, note):
+        self.io.writeMidi(0x80 + self.track.trackIndex, note, 0)
+        self.track.liveNotes[note] = False
+        self.update()
 
