@@ -6,7 +6,7 @@ class Pattern(object):
         self.track = track
         self.patternIndex = patternIndex
         self.length = length
-        self.speedReduction = 1
+        self.speedReduction = 4
         self.data = defaultdict(lambda: defaultdict(lambda: -1))
         self.observers = weakref.WeakKeyDictionary()
 

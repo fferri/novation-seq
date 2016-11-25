@@ -202,7 +202,9 @@ class PatternEditController(PatternController, LKController):
         if section == 'top' and row == 8 and col == 6 and self.shift:
             self.shift = False # otherwise shift gets stuck
             cb = lambda n: self.pattern.setSpeedReduction(n)
-            self.io.setLPController(NumberSelectController(self, cb, self.pattern.getSpeedReduction(), 1, 32))
+            isPow2 = lambda x: x and not x & (x - 1)
+            col = lambda i: [0,0] if i==4 else [0,1] if i<4 else [3,1] if isPow2(i) else [1,1]
+            self.io.setLPController(NumberSelectController(self, cb, self.pattern.getSpeedReduction(), 1, 64, colorFunc=col))
             return
         if section == 'top' and row == 8 and col == 7:
             self.shift = True
