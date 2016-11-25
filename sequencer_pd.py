@@ -64,6 +64,9 @@ class IO(pyext._class):
         self.lpcontroller = PatternEditController(self, 0, 0)
         self.lkcontroller = TracksController(self)
         self.midiBuffer = {}
+        self.playing = False
+        self.tpb = 4
+        self.bpm = 120
 
     def _init(self):
         self.launchpad.reset()
@@ -98,6 +101,27 @@ class IO(pyext._class):
                 self.launchkey.onMidiData(0, self.midiBuffer[pdport])
             elif pdport == self.launchkeyPorts[1]:
                 self.launchkey.onMidiData(1, self.midiBuffer[pdport])
+
+    def setticksperbeat_1(self, tpb):
+        self.tpb = max(1, tpb)
+
+    def setbeatsperminute_1(self, bpm):
+        self.bpm = max(1, bpm)
+
+    def tickPeriod(self):
+        return 60000. / self.tpb / self.bpm / 4.
+
+    def start_1(self):
+        self.playing = True
+        self._outlet(1, ['delaytick', self.tickPeriod()])
+
+    def stop_1(self):
+        self.playing = False
+
+    def delayedtick_1(self):
+        if self.playing:
+            self.tick_1()
+            self._outlet(1, ['delaytick', self.tickPeriod()])
 
     def songgetrowduration_1(self, row):
         self._outlet(1, ['rowduration', row, self.song.getRowDuration(row)])

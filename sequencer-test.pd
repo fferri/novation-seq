@@ -1,7 +1,5 @@
-#N canvas 251 165 699 417 10;
-#X obj 82 40 tgl 40 0 empty empty Start/stop 42 30 0 18 -262144 -1
--1 0 1;
-#X obj 81 257 route pos output;
+#N canvas 400 229 699 417 10;
+#X obj 51 247 route pos output;
 #N canvas 321 40 885 313 midiout 0;
 #X obj 57 50 route 0 1 2 3 4 5 6 7, f 134;
 #X obj 112 247 midiout;
@@ -35,27 +33,8 @@
 #X connect 10 0 1 0;
 #X connect 11 0 1 0;
 #X connect 12 0 0 0;
-#X restore 127 288 pd midiout;
-#N canvas 0 22 450 300 metronome 0;
-#X obj 181 124 sel 1;
-#X msg 142 157 rewind;
-#X msg 49 157 tick;
-#X obj 49 210 outlet;
-#X obj 49 30 inlet;
-#X obj 49 67 t f f f;
-#X obj 142 124 sel 0;
-#X obj 49 124 metro 31.25;
-#X connect 0 0 1 0;
-#X connect 1 0 3 0;
-#X connect 2 0 3 0;
-#X connect 4 0 5 0;
-#X connect 5 0 6 0;
-#X connect 5 1 7 0;
-#X connect 5 2 0 0;
-#X connect 6 0 1 0;
-#X connect 7 0 2 0;
-#X restore 81 115 pd metronome;
-#X obj 81 196 sequencer;
+#X restore 97 278 pd midiout;
+#X obj 51 220 sequencer;
 #X obj 262 197 loadbang;
 #X text 325 199 initialize with a ready to play setup;
 #N canvas 0 22 307 202 position 0;
@@ -67,16 +46,20 @@
 #X connect 0 1 2 0;
 #X connect 3 0 0 0;
 #X coords 0 -1 1 1 100 40 1 100 100;
-#X restore 81 320 pd position;
-#X obj 97 164 r seq;
+#X restore 51 310 pd position;
+#X obj 51 194 r seq;
+#X obj 51 40 nbx 5 20 1 240 0 1 empty empty empty 0 -8 0 16 -262144
+-1 -1 126 256;
+#X msg 51 67 \; seq setbeatsperminute \$1;
+#X msg 51 107 \; seq start;
 #X msg 262 260 \; seq songsetrow 0 0 0 0 0 0 0 0 0 \, songsetlength
-1 \, songsetrowduration 0 128 \, setlength 0 0 8 \, setlength 1 0 8
+1 \, songsetrowduration 0 256 \, setlength 0 0 8 \, setlength 1 0 8
 \, setlength 2 0 8 \, setlength 3 0 8 \, setlength 4 0 8 \, setlength
 5 0 8 \, setlength 6 0 8 \, setlength 7 0 8;
-#X connect 0 0 3 0;
-#X connect 1 0 7 0;
-#X connect 1 1 2 0;
-#X connect 3 0 4 0;
-#X connect 4 0 1 0;
-#X connect 5 0 9 0;
-#X connect 8 0 4 0;
+#X msg 124 107 \; seq stop;
+#X connect 0 0 5 0;
+#X connect 0 1 1 0;
+#X connect 2 0 0 0;
+#X connect 3 0 10 0;
+#X connect 6 0 2 0;
+#X connect 7 0 8 0;
