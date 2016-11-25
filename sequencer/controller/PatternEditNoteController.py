@@ -21,7 +21,9 @@ class PatternEditNoteController(PatternController):
     def update(self, sync=True):
         self.parent.update(sync=False)
         for c in range(self.length):
-            self.io.launchpad.set('default', 'center', self.note, self.patternRow + c, 3, 0)
+            for row in self.parent.note2rows(self.note):
+                col = self.patternRow + c
+                self.io.launchpad.set('default', 'center', row, col, 3, 0)
         if sync:
             self.io.launchpad.syncBuffer('default')
 
@@ -32,7 +34,8 @@ class PatternEditNoteController(PatternController):
         if buf != 'default':
             return
         if section == 'center':
-            if row == self.note and col > self.patternRow:
+            note = self.parent.row2note(row)
+            if note == self.note and col > self.patternRow:
                 self.deleteOnRelease = False
                 length = 1 + col - self.patternRow
                 if not self.pattern.noteIsPlayingInRange(self.patternRow + self.originalLength, self.patternRow + length - 1, self.note):
@@ -47,7 +50,8 @@ class PatternEditNoteController(PatternController):
         if buf != 'default':
             return
         if section == 'center':
-            if row == self.note and col == self.patternRow:
+            note = self.parent.row2note(row)
+            if note == self.note and col == self.patternRow:
                 if self.deleteOnRelease:
                     self.pattern.noteDelete(self.patternRow, self.note)
                 else:
@@ -55,7 +59,7 @@ class PatternEditNoteController(PatternController):
                     self.pattern.noteAdd(self.patternRow, self.note, self.length)
                 self.io.setLPController(self.parent)
                 return
-            if row == self.note and col > self.patternRow:
+            if note == self.note and col > self.patternRow:
                 self.length = 1
                 self.deleteOnRelease = False
                 self.update()

@@ -18,8 +18,10 @@ class PatternAddNoteController(PatternController):
 
     def update(self, sync=True):
         self.parent.update(sync=False)
-        for c in range(self.length):
-            self.io.launchpad.set('default', 'center', self.note, self.patternRow + c, 3, 0)
+        for row in self.parent.note2rows(self.note):
+            for c in range(self.length):
+                col = self.patternRow + c
+                self.io.launchpad.set('default', 'center', row, col, 3, 0)
         if sync:
             self.io.launchpad.syncBuffer('default')
 
@@ -30,7 +32,8 @@ class PatternAddNoteController(PatternController):
         if buf != 'default':
             return
         if section == 'center':
-            if row == self.note and col > self.patternRow:
+            note = self.parent.row2note(row)
+            if note == self.note and col > self.patternRow:
                 length = 1 + col - self.patternRow
                 if not self.pattern.noteIsPlayingInRange(self.patternRow, self.patternRow + length - 1, self.note):
                     self.length = length
@@ -44,11 +47,12 @@ class PatternAddNoteController(PatternController):
         if buf != 'default':
             return
         if section == 'center':
-            if row == self.note and col == self.patternRow:
+            note = self.parent.row2note(row)
+            if note == self.note and col == self.patternRow:
                 self.pattern.noteAdd(self.patternRow, self.note, self.length)
                 self.io.setLPController(self.parent)
                 return
-            if row == self.note and col > self.patternRow:
+            if note == self.note and col > self.patternRow:
                 self.length = 1
                 self.update()
                 return

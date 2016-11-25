@@ -4,6 +4,7 @@ from PatternEditNoteController import *
 from SongEditController import *
 from PatternSelectController import *
 from NumberSelectController import *
+from sequencer.util import NoteMapping, scales
 from collections import defaultdict
 
 class PatternEditController(PatternController):
@@ -18,6 +19,7 @@ class PatternEditController(PatternController):
         self.track.addObserver(self)
         self.pattern.addObserver(self)
         self.shift = False
+        self.noteMap = defaultdict(NoteMapping)
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
@@ -70,6 +72,16 @@ class PatternEditController(PatternController):
         if self.patternIndex in (old.patternIndex, new.patternIndex):
             self.io.lpcontroller.update()
 
+    def row2note(self, row):
+        note = self.noteMap[self.trackIndex].getMidiNote(row)
+        print('row2note: %s --> %s' % (row, note))
+        return note
+
+    def note2rows(self, note):
+        rows = self.noteMap[self.trackIndex].getGridRows(note)
+        print('note2rows: %s --> %s' % (note, rows))
+        return rows
+
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
         self.io.launchpad.invertRows('default','center')
@@ -84,16 +96,18 @@ class PatternEditController(PatternController):
 
         # draw active notes
         for note in self.track.activeNotes.get():
-            self.io.launchpad.set('default', 'right', note, 8, 1, 0)
+            for row in self.note2rows(note):
+                self.io.launchpad.set('default', 'right', row, 8, 1, 0)
 
         # draw notes
         for note, intervals in self.pattern.noteGetIntervals().items():
-            for (rowStart, rowStop) in intervals:
-                self.io.launchpad.set('default', 'center', note, rowStart, 2, 3)
-                for row in range(rowStart + 1, rowStop):
-                    self.io.launchpad.set('default', 'center', note, row, 0, 1)
-                if self.renderNoteOffs:
-                    self.io.launchpad.set('default', 'center', note, rowStop, 1, 0)
+            for (patternRowStart, patternRowStop) in intervals:
+                for row in self.note2rows(note):
+                    self.io.launchpad.set('default', 'center', row, patternRowStart, 2, 3)
+                    for patternRow in range(patternRowStart + 1, patternRowStop):
+                        self.io.launchpad.set('default', 'center', row, patternRow, 0, 1)
+                    if self.renderNoteOffs:
+                        self.io.launchpad.set('default', 'center', row, patternRowStop, 1, 0)
 
         # turn on buttons with a function
         for col in range(4):
@@ -114,7 +128,7 @@ class PatternEditController(PatternController):
         if buf != 'default': return
         if section == 'center':
             patternRow = col
-            note = row
+            note = self.row2note(row)
             if self.pattern.noteGetLength(patternRow, note) is not None:
                 self.io.setLPController(PatternEditNoteController(self, patternRow, note))
             elif not self.pattern.noteIsPlayingAt(patternRow, note):
