@@ -19,7 +19,7 @@ class NumberSelectController(LPController):
             cur = v == self.currentValue
             color = [2, 0] if cur else self.colorFunc(v)
             if v == 0:
-                self.io.launchpad.set('default', 'right', row, col, *color)
+                self.io.launchpad.set('default', 'right', 7, 8, *color)
             else:
                 row, col = (v - 1) / 8, (v - 1) % 8
                 self.io.launchpad.set('default', 'center', row, col, *color)
