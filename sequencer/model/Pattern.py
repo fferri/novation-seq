@@ -143,7 +143,16 @@ class Pattern(object):
         return self.length
 
     def setLength(self, length, notify=True):
+        oldLength = self.length
         self.length = length
+        # remove rows beyond length:
+        rowsToDelete = [row for row in self.data if row >= length]
+        for row in rowsToDelete: del self.data[row]
+        if self.length > oldLength:
+            # repeat data to fill empty region of pattern:
+            for srcRow in range(self.length):
+                for dstRow in range(srcRow + oldLength, self.length, oldLength):
+                    self.setRow(dstRow, self.getRow(srcRow), False)
         if notify: self.notifyPatternChange()
 
     def getSpeedReduction(self):
