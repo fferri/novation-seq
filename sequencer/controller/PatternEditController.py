@@ -19,7 +19,6 @@ class PatternEditController(PatternController):
         self.track.addObserver(self)
         self.pattern.addObserver(self)
         self.shift = False
-        self.noteMap = defaultdict(NoteMapping)
         self.trackScale = defaultdict(int)
         self.scales = [NoteMapping()]
         self.scaleColor = [[1,0]]
