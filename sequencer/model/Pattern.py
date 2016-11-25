@@ -114,7 +114,7 @@ class Pattern(object):
         return self.data[row][col]
 
     def set(self, row, col, value, notify=True):
-        if value == -1:
+        if row in self.data and col in self.data[row] and value == -1:
             del self.data[row][col]
             if self.isEmptyRow(row):
                 del self.data[row]
