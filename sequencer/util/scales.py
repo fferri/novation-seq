@@ -19,3 +19,6 @@ def major():
 def minor():
     return (0, 2, 3, 5, 7, 8, 10, 12)
 
+def drum8():
+    return list(range(36)) + [36, 38, 39, 40, 42, 44, 46, 49] + [37, 41, 43, 45, 47, 48, 50, 51] + list(range(52, 128))
+

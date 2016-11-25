@@ -27,6 +27,8 @@ class PatternEditController(PatternController):
             for scale, color in (('major', [1,1]), ('minor', [0,1])):
                 self.scales.append(NoteMapping(enumerate(getattr(scales, scale)(root))))
                 self.scaleColor.append(color)
+        self.scales.append(NoteMapping(enumerate(scales.drum8())))
+        self.scaleColor.append([3, 1])
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
