@@ -33,11 +33,11 @@ class PatternSelectController(LPController):
 
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
+        self.io.launchpad.set('default', 'top', 8, 5, 0, 1)
         for patternIndex in range(64):
             row, col = patternIndex / 8, patternIndex % 8
             pattern = self.track.patterns[patternIndex]
             empty = pattern.isEmpty()
-            #cur = patternIndex == self.track.lastSelectedPatternIndex
             cur = patternIndex == self.currentPatternIndex
             color = [2, 0] if cur else [0, 1] if empty else [2, 3]
             self.io.launchpad.set('default', 'center', row, col, *color)
