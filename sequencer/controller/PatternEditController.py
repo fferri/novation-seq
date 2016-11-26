@@ -25,9 +25,9 @@ class PatternEditController(PatternController, LKController):
         self.scaleColor = [[1,0]]
         for root in range(12):
             for scale, color in (('major', [1,1]), ('minor', [0,1])):
-                self.scales.append(NoteMapping(enumerate(getattr(scales, scale)(root))))
+                self.scales.append(NoteMapping(enumerate(getattr(scales, scale)(root)), 7))
                 self.scaleColor.append(color)
-        self.scales.append(NoteMapping(enumerate(scales.drum8())))
+        self.scales.append(NoteMapping(enumerate(scales.drum8()), 8))
         self.scaleColor.append([3, 1])
 
     def __str__(self):
@@ -175,7 +175,8 @@ class PatternEditController(PatternController, LKController):
                 self.io.setLPController(PatternAddNoteController(self, patternRow, note))
             return
         if section == 'top' and row == 8 and col in range(4):
-            rowStep, colStep = (1, 1) if self.shift else (8, 8)
+            pageSize = self.scales[self.trackScale[self.trackIndex]].pageSize
+            rowStep, colStep = (1, 1) if self.shift else (pageSize, 8)
             self.incrVScroll(rowStep * (int(col == 0) - int(col == 1))) # flipped
             self.incrHScroll(colStep * (int(col == 3) - int(col == 2)))
             self.io.launchpad.scroll('default', 'center', *self.scroll[self.trackIndex])
