@@ -72,8 +72,9 @@ class SongEditController(LPController):
                 self.io.setLPController(self.parent)
                 return
         elif section == 'right': # and col == 8:
-            cb = lambda n: self.io.song.setRowDuration(row, n)
-            self.io.setLPController(NumberSelectController(self, cb, self.io.song.getRowDuration(row), 1, 64))
+            if row < self.io.song.getLength():
+                cb = lambda n: self.io.song.setRowDuration(row, n)
+                self.io.setLPController(NumberSelectController(self, cb, self.io.song.getRowDuration(row), 1, 64))
             return
 
 
