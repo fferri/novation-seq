@@ -68,15 +68,12 @@ class IO(pyext._class):
         self.tpb = 4
         self.bpm = 120
 
-    def _init(self):
+    def init_1(self):
         self.launchpad.reset()
         self.launchkey.reset()
         self.launchkey.setExtendedMode(True)
         self.lpcontroller.update()
         self.lkcontroller.update()
-
-    def init_1(self):
-        self._init()
 
     def setLPController(self, c):
         self.lpcontroller = c
