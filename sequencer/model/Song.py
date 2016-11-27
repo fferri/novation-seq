@@ -122,6 +122,7 @@ class Song(object):
                 track.resetTick(self.currentRowPrev)
                 if self.currentRow >= self.getLength():
                     self.currentRow = 0
+                track.setPlayingPatterns(self.get(self.currentRow, trackIndex))
                 self.notifyCurrentRowChange()
             self.currentRowPrev = self.currentRow
             r = track.tick(self.currentRow)

@@ -16,6 +16,7 @@ class Track(object):
         self.activeNotes = ActiveNotesTracker()
         self.liveNotes = defaultdict(bool)
         self.outputMerger = TrackOutputMerger(self)
+        self.playingPatterns = []
 
     def addObserver(self, callable_):
         self.observers[callable_] = 1
@@ -28,15 +29,17 @@ class Track(object):
         for observer in observers:
             observer.onTrackStatusChange(self.trackIndex, self.volume, self.muted, self.isActive())
 
+    def setPlayingPatterns(self, patterns):
+        self.playingPatterns = [p for p in patterns if p != -1]
+
     def tick(self, songRow):
         trackOutput = {}
-        playingPatterns = [p for p in self.song.get(songRow, self.trackIndex) if p != -1]
-        for patternIndex in playingPatterns:
+        for patternIndex in self.playingPatterns:
             pattern = self.patterns[patternIndex]
             ret1 = pattern.tick()
             if ret1 is not None:
                 trackOutput[patternIndex] = ret1
-        return self.outputMerger.merge(songRow, playingPatterns, trackOutput)
+        return self.outputMerger.merge(songRow, self.playingPatterns, trackOutput)
 
     def resetTick(self, songRow=None):
         if songRow is None:
