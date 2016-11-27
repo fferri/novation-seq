@@ -71,6 +71,30 @@ class PatternEditController(PatternController, LKController):
         self.incrVScroll(deltaRowOffset)
         self.incrHScroll(deltaColOffset)
 
+    def rowDown(self):
+        self.incrVScroll(1)
+
+    def rowUp(self):
+        self.incrVScroll(-1)
+
+    def rowLeft(self):
+        self.incrHScroll(-1)
+
+    def rowRight(self):
+        self.incrHScroll(1)
+
+    def pageDown(self):
+        self.incrVScroll(self.scales[self.trackScale[self.trackIndex]].pageSize)
+
+    def pageUp(self):
+        self.incrVScroll(-self.scales[self.trackScale[self.trackIndex]].pageSize)
+
+    def pageLeft(self):
+        self.incrHScroll(-8)
+
+    def pageRight(self):
+        self.incrHScroll(8)
+
     def onTrackStatusChange(self, trackIndex, volume, muted, active):
         if active == False:
             newTrack = self.io.song.activeTrack
@@ -175,10 +199,12 @@ class PatternEditController(PatternController, LKController):
                 self.io.setLPController(PatternAddNoteController(self, patternRow, note))
             return
         if section == 'top' and row == 8 and col in range(4):
-            pageSize = self.scales[self.trackScale[self.trackIndex]].pageSize
-            rowStep, colStep = (1, 1) if self.shift else (pageSize, 8)
-            self.incrVScroll(rowStep * (int(col == 0) - int(col == 1))) # flipped
-            self.incrHScroll(colStep * (int(col == 3) - int(col == 2)))
+            {
+                0: (self.pageDown, self.rowDown),  # rows are
+                1: (self.pageUp, self.rowUp),      # flipped
+                2: (self.pageLeft, self.rowLeft),
+                3: (self.pageRight, self.rowRight),
+            }[col][int(self.shift)]()
             self.io.launchpad.scroll('default', 'center', *self.scroll[self.trackIndex])
             self.io.launchpad.syncBuffer('default')
             return
