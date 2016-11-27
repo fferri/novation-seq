@@ -148,8 +148,8 @@ class IO(pyext._class):
     def songget_1(self, row, col):
         self._outlet(1, ['song', 'data', row, col, self.song.get(row, col)])
 
-    def songset_1(self, row, col, value):
-        self.song.set(row, col, value)
+    def songset_1(self, row, col, *values):
+        self.song.set(row, col, values)
 
     def songgetrow_1(self, row):
         self._outlet(1, ['song', 'data-row', row] + self.song.getRow(row))

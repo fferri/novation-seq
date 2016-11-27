@@ -119,24 +119,28 @@ class Song(object):
 
     def tick(self):
         output = {}
-        for trackIndex, track in enumerate(self.tracks):
-            if self.currentRowPrev != self.currentRow:
+
+        if self.currentRowPrev != self.currentRow:
+            if self.currentRow >= self.getLength():
+                self.currentRow = 0
+            for trackIndex, track in enumerate(self.tracks):
                 track.resetTick(self.currentRowPrev)
-                if self.currentRow >= self.getLength():
-                    self.currentRow = 0
                 track.setPlayingPatterns(self.get(self.currentRow, trackIndex))
-                self.notifyCurrentRowChange()
-            self.currentRowPrev = self.currentRow
+            self.notifyCurrentRowChange()
+        self.currentRowPrev = self.currentRow
+
+        for trackIndex, track in enumerate(self.tracks):
             r = track.tick(self.currentRow)
             if not track.muted:
                 output[trackIndex] = r
                 track.activeNotes.track(r)
-            self.currentTick += 1
-            if self.currentTick >= self.rowDuration[self.currentRow] * self.tpb * 4:
-                self.currentTick = 0
-                self.currentRow += 1
-        ret = (self.currentRow, self.currentTick, output)
-        return ret
+
+        self.currentTick += 1
+        if self.currentTick >= self.rowDuration[self.currentRow] * self.tpb * 4:
+            self.currentTick = 0
+            self.currentRow += 1
+
+        return self.currentRow, self.currentTick, output
 
     def resetTick(self):
         self.currentRow = 0
