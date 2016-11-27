@@ -34,13 +34,17 @@ class Track(object):
 
     def tick(self, songRow):
         trackOutput = {}
+        playHeadChanged = {}
         for patternIndex in self.playingPatterns:
             pattern = self.patterns[patternIndex]
-            ret1 = pattern.tick()
+            ret1, playHeadChanged[patternIndex] = pattern.tick()
             if ret1 is not None:
                 trackOutput[patternIndex] = ret1
         ret = self.outputMerger.merge(songRow, self.playingPatterns, trackOutput)
         self.activeNotes.track(ret)
+        for patternIndex, changed in playHeadChanged.items():
+            if changed:
+                self.patterns[patternIndex].notifyPlayHeadChange()
         return ret
 
     def resetTick(self, songRow=None):

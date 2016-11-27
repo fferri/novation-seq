@@ -32,10 +32,12 @@ class Pattern(object):
     def tick(self):
         if self.playHeadRow == -1: self.playHeadRow = 0
         ret = None
+        playHeadChanged = False
         if self.playHeadTick == 0:
             ret = (self.playHeadRow, self.playHeadTick, self.getRow(self.playHeadRow))
             if self.playHeadRowPrev != self.playHeadRow:
-                self.notifyPlayHeadChange()
+                # Track will call Pattern.notifyPlayHeadChange after tracking active notes
+                playHeadChanged = True
         self.playHeadRowPrev = self.playHeadRow
         self.playHeadTick += 1
         if self.playHeadTick >= self.speedReduction:
@@ -43,7 +45,7 @@ class Pattern(object):
             self.playHeadRow += 1
             if self.playHeadRow >= self.getLength():
                 self.playHeadRow = 0
-        return ret
+        return ret, playHeadChanged
 
     def resetTick(self):
         self.playHeadRow = -1
