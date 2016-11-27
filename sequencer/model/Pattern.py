@@ -9,6 +9,9 @@ class Pattern(object):
         self.speedReduction = 4
         self.data = defaultdict(lambda: defaultdict(lambda: -1))
         self.observers = weakref.WeakKeyDictionary()
+        self.playHeadRow = -1
+        self.playHeadRowPrev = -1
+        self.playHeadTick = 0
 
     def addObserver(self, callable_):
         self.observers[callable_] = 1
@@ -20,6 +23,32 @@ class Pattern(object):
         observers = list(self.observers.keys())
         for observer in observers:
             observer.onPatternChange(self.track.trackIndex, self.patternIndex)
+
+    def notifyPlayHeadChange(self):
+        observers = list(self.observers.keys())
+        for observer in observers:
+            observer.onPlayHeadChange(self.track.trackIndex, self.patternIndex, self.playHeadRow)
+
+    def tick(self):
+        if self.playHeadRow == -1: self.playHeadRow = 0
+        ret = None
+        if self.playHeadTick == 0:
+            ret = (self.playHeadRow, self.playHeadTick, self.getRow(self.playHeadRow))
+            if self.playHeadRowPrev != self.playHeadRow:
+                self.notifyPlayHeadChange()
+        self.playHeadRowPrev = self.playHeadRow
+        self.playHeadTick += 1
+        if self.playHeadTick >= self.speedReduction:
+            self.playHeadTick = 0
+            self.playHeadRow += 1
+            if self.playHeadRow >= self.getLength():
+                self.playHeadRow = 0
+        return ret
+
+    def resetTick(self):
+        self.playHeadRow = -1
+        self.playHeadRowPrev = -1
+        self.playHeadTick = 0
 
     def noteAdd(self, row, note, duration, velocity=100):
         if note < 1: return
@@ -123,10 +152,10 @@ class Pattern(object):
         if notify: self.notifyPatternChange()
 
     def getRow(self, row):
-        numCols = max(self.data[row]) if len(self.data[row]) else 0
+        numCols = 1 + (max(self.data[row]) if len(self.data[row]) else 0)
         # make sure to always output noteColumns:
-        numCols = max(numCols, max(self.track.noteCols))
-        return [self.get(row, col) for col in range(1 + numCols)]
+        numCols = max(numCols, 1 + max(self.track.noteCols))
+        return [self.get(row, col) for col in range(numCols)]
 
     def setRow(self, row, values, notify=True):
         for col, value in enumerate(values):

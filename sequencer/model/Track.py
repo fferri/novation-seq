@@ -1,6 +1,5 @@
 from Pattern import *
-from PlayHead import *
-from sequencer.util import ActiveNotesTracker
+from sequencer.util import ActiveNotesTracker, TrackOutputMerger
 from collections import defaultdict
 import weakref
 
@@ -10,14 +9,13 @@ class Track(object):
         self.trackIndex = trackIndex
         self.patterns = [Pattern(self, patternIndex) for patternIndex in range(64)]
         self.noteCols = list(range(8)) # default: 8-note polyphony, using the first 8 columns
-        self.playHead = PlayHead()
-        self.playHeadPrev = PlayHead()
         self.observers = weakref.WeakKeyDictionary()
         self.volume = 100
         self.muted = False
         self.lastSelectedPatternIndex = 0
         self.activeNotes = ActiveNotesTracker()
         self.liveNotes = defaultdict(bool)
+        self.outputMerger = TrackOutputMerger(self)
 
     def addObserver(self, callable_):
         self.observers[callable_] = 1
@@ -25,16 +23,30 @@ class Track(object):
     def removeObserver(self, callable_):
         if callable_ in self.observers: del self.observers[callable_]
 
-    def notifyPlayHeadChange(self):
-        if self.playHead.patternIndex != self.playHeadPrev.patternIndex or self.playHead.patternRow != self.playHeadPrev.patternRow:
-            observers = list(self.observers.keys())
-            for observer in observers:
-                observer.onPlayHeadChange(self.playHeadPrev, self.playHead)
-
     def notifyTrackStatusChange(self):
         observers = list(self.observers.keys())
         for observer in observers:
             observer.onTrackStatusChange(self.trackIndex, self.volume, self.muted, self.isActive())
+
+    def tick(self, songRow):
+        trackOutput = {}
+        playingPatterns = [p for p in self.song.get(songRow, self.trackIndex) if p != -1]
+        for patternIndex in playingPatterns:
+            pattern = self.patterns[patternIndex]
+            ret1 = pattern.tick()
+            if ret1 is not None:
+                trackOutput[patternIndex] = ret1
+        return self.outputMerger.merge(songRow, playingPatterns, trackOutput)
+
+    def resetTick(self, songRow=None):
+        if songRow is None:
+            for pattern in self.patterns:
+                pattern.resetTick()
+        else:
+            for patternIndex in self.song.get(songRow, self.trackIndex):
+                if patternIndex != -1:
+                    pattern = self.patterns[patternIndex]
+                    pattern.resetTick()
 
     def getNoteColumns(self):
         return self.noteCols[:]

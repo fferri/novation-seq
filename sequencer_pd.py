@@ -120,6 +120,7 @@ class IO(pyext._class):
 
     def stop_1(self):
         self.playing = False
+        self.song.resetTick()
 
     def delayedtick_1(self):
         if self.playing:

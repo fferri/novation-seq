@@ -8,9 +8,7 @@ class Song(object):
         self.rowDuration = defaultdict(lambda: defaultRowDuration)
         self.currentRow = 0
         self.currentTick = 0
-        self.lastOutputRow = None
-        self.playHeads = {}
-        self.playHeadsPrev = {}
+        self.currentRowPrev = -1
         self.length = 1
         self.data = defaultdict(lambda: defaultdict(lambda: set()))
         self.observers = weakref.WeakKeyDictionary()
@@ -34,7 +32,7 @@ class Song(object):
 
     def get(self, row, col):
         flatSet = [-1] * self.maxPatternPolyphony
-        for i, el in self.data[row][col]:
+        for i, el in enumerate(self.data[row][col]):
             flatSet[i] = el
         return flatSet
 
@@ -103,11 +101,10 @@ class Song(object):
 
     def rewind(self):
         self.currentRow = 0
+        self.currentRowPrev = -1
         self.currentTick = 0
         for track in self.tracks:
-            track.playHeadPrev.copyFrom(track.playHead)
-            track.playHead.reset()
-            track.notifyPlayHeadChange()
+            track.resetTick()
 
     def getRowModulo(self, row):
         from fractions import gcd
@@ -118,35 +115,32 @@ class Song(object):
                 pats.append(track.patterns[patternIndex])
         return reduce(gcd, [1] + [pat.getLength() for pat in pats])
 
-    def incrTick(self):
-        self.currentTick += 1
-        if self.currentTick >= self.rowDuration[self.currentRow]:
-            self.currentTick = 0
-            self.currentRow += 1
-            if self.currentRow >= self.getLength():
-                self.currentRow = 0
-
     def tick(self):
         output = {}
         for trackIndex, track in enumerate(self.tracks):
-            track.playHeadPrev.copyFrom(track.playHead)
-            track.playHead.patternIndex = self.get(self.currentRow, trackIndex)
-            if track.playHead.patternIndex != -1:
-                pattern = track.patterns[track.playHead.patternIndex]
-                t = int(self.currentTick / pattern.getSpeedReduction())
-                track.playHead.patternRow = t % pattern.getLength()
-                if track.playHead.patternRow != track.playHeadPrev.patternRow:
-                    output[trackIndex] = pattern.getRow(track.playHead.patternRow)
-                    if track.muted:
-                        output[trackIndex] = [-1 for _ in output[trackIndex]]
-                    track.activeNotes.track(output[trackIndex])
-            track.notifyPlayHeadChange()
-        if self.lastOutputRow != self.currentRow:
-            self.notifyCurrentRowChange()
+            if self.currentRowPrev != self.currentRow:
+                track.resetTick(self.currentRowPrev)
+                if self.currentRow >= self.getLength():
+                    self.currentRow = 0
+                self.notifyCurrentRowChange()
+            self.currentRowPrev = self.currentRow
+            r = track.tick(self.currentRow)
+            if not track.muted:
+                output[trackIndex] = r
+                track.activeNotes.track(r)
+            self.currentTick += 1
+            if self.currentTick >= self.rowDuration[self.currentRow]:
+                self.currentTick = 0
+                self.currentRow += 1
         ret = (self.currentRow, self.currentTick, output)
-        self.lastOutputRow = self.currentRow
-        self.incrTick()
         return ret
+
+    def resetTick(self):
+        self.currentRow = 0
+        self.currentTick = 0
+        self.currentRowPrev = -1
+        for track in self.tracks:
+            track.resetTick()
 
     def dump(self):
         d = []

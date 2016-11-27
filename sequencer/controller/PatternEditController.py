@@ -102,8 +102,8 @@ class PatternEditController(PatternController, LKController):
             u = self.io.lpcontroller == self
             self.selectPattern(newTrack.trackIndex, newTrack.lastSelectedPatternIndex, update=u)
 
-    def onPlayHeadChange(self, old, new):
-        if self.patternIndex in (old.patternIndex, new.patternIndex):
+    def onPlayHeadChange(self, trackIndex, patternIndex, playHeadRow):
+        if self.trackIndex == trackIndex and self.patternIndex == patternIndex:
             self.io.lpcontroller.update()
 
     def setScale(self, i):
@@ -150,9 +150,9 @@ class PatternEditController(PatternController, LKController):
         self.io.launchpad.scroll('default','right', self.scroll[self.trackIndex][0], 0)
 
         # draw playhead
-        if self.track.playHead.patternIndex == self.patternIndex:
+        if self.pattern.playHeadRow >= 0:
             for row in range(128):
-                self.io.launchpad.set('default', 'center', row, self.track.playHead.patternRow, 1, 0)
+                self.io.launchpad.set('default', 'center', row, self.pattern.playHeadRow, 1, 0)
 
         # draw active notes
         for note in self.track.activeNotes.get():
