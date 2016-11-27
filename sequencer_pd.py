@@ -1,6 +1,7 @@
 import pyext
 from sequencer.model import *
 from sequencer.controller import *
+from sequencer.util import Transport
 from device import *
 
 class LaunchpadImpl(BufferedLaunchpad):
@@ -59,12 +60,12 @@ class IO(pyext._class):
         self.launchkeyPorts = (launchkeyPort, launchkeyCtrlPort)
         self.midiOutPort = midiOutPort
         self.song = Song()
+        self.transport = Transport(self)
         self.launchpad = LaunchpadImpl(self)
         self.launchkey = LaunchkeyImpl(self)
         self.lpcontroller = PatternEditController(self, 0, 0)
         self.lkcontroller = TracksController(self)
         self.midiBuffer = {}
-        self.playing = False
 
     def init_1(self):
         self.launchpad.reset()
@@ -110,17 +111,21 @@ class IO(pyext._class):
         return 60000. / self.song.getTicksPerBeat() / self.song.getBeatsPerMinute() / 4.
 
     def start_1(self):
-        self.playing = True
-        self._outlet(1, ['delaytick', self.tickPeriod()])
+        self.transport.start()
 
     def stop_1(self):
-        self.playing = False
-        self.song.resetTick()
+        self.transport.stop()
 
     def delayedtick_1(self):
-        if self.playing:
+        if self.transport.isPlaying():
             self.tick_1()
             self._outlet(1, ['delaytick', self.tickPeriod()])
+
+    def onPlaybackStatusChange(self, playing):
+        if playing:
+            self._outlet(1, ['delaytick', self.tickPeriod()])
+        else:
+            self.song.resetTick()
 
     def songgetrowduration_1(self, row):
         self._outlet(1, ['rowduration', row, self.song.getRowDuration(row)])

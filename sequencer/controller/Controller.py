@@ -17,3 +17,6 @@ class Controller(object):
     def onSongChange(self):
         pass
 
+    def onPlaybackStatusChange(self, playing):
+        pass
+
