@@ -53,7 +53,7 @@
 #X msg 51 67 \; seq setbeatsperminute \$1;
 #X msg 51 107 \; seq start;
 #X msg 124 107 \; seq stop;
-#X msg 262 260 \; seq songsetlength 1 \, songsetrowduration 0 256 \,
+#X msg 262 260 \; seq songsetlength 1 \, songsetrowduration 0 64 \,
 setlength 0 0 8 \, setlength 1 0 8 \, setlength 2 0 8 \, setlength
 3 0 8 \, setlength 4 0 8 \, setlength 5 0 8 \, setlength 6 0 8 \, setlength
 7 0 8;

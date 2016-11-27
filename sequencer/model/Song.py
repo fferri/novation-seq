@@ -132,7 +132,7 @@ class Song(object):
                 output[trackIndex] = r
                 track.activeNotes.track(r)
             self.currentTick += 1
-            if self.currentTick >= self.rowDuration[self.currentRow]:
+            if self.currentTick >= self.rowDuration[self.currentRow] * self.tpb:
                 self.currentTick = 0
                 self.currentRow += 1
         ret = (self.currentRow, self.currentTick, output)
