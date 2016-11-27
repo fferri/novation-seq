@@ -106,10 +106,10 @@ class IO(pyext._class):
                 self.launchkey.onMidiData(1, self.midiBuffer[pdport])
 
     def setticksperbeat_1(self, tpb):
-        self.song.setTicksPerBeat()
+        self.song.setTicksPerBeat(tpb)
 
     def setbeatsperminute_1(self, bpm):
-        self.song.setBeatsPerMinute()
+        self.song.setBeatsPerMinute(bpm)
 
     def tickPeriod(self):
         return 60000. / self.tpb / self.bpm / 4.
