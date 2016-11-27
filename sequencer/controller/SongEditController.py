@@ -45,6 +45,7 @@ class SongEditController(LPController):
                 c = [0, 0] if empty else [2, 2] if curRow else [0, 3]
                 self.io.launchpad.set('default', 'center', row, trackIndex, *c)
             self.io.launchpad.set('default', 'right', row, 8, 3 * int(curRow), 1)
+        self.io.launchpad.set('default', 'right', self.io.song.getLength(), 8, 1, 0)
         self.io.launchpad.set('default', 'top', 8, 4, 2, 2)
         self.io.launchpad.set('default', 'top', 8, 0, 0, 1)
         self.io.launchpad.set('default', 'top', 8, 1, 0, 1)
@@ -57,9 +58,11 @@ class SongEditController(LPController):
         section = str(section)
         if buf != 'default':
             return
+        l = self.io.song.getLength()
         if section == 'center':
-            self.io.song.tracks[col].activate()
-            self.io.setLPController(SongPatternsSelectController(self, row))
+            if row < l:
+                self.io.song.tracks[col].activate()
+                self.io.setLPController(SongPatternsSelectController(self, row))
         elif section == 'top' and row == 8:
             if col in range(2):
                 if col == 0: self.rowUp()
@@ -72,9 +75,15 @@ class SongEditController(LPController):
                 self.io.setLPController(self.parent)
                 return
         elif section == 'right': # and col == 8:
-            if row < self.io.song.getLength():
-                cb = lambda n: self.io.song.setRowDuration(row, n)
-                self.io.setLPController(NumberSelectController(self, cb, self.io.song.getRowDuration(row), 1, 64))
+            if row < l:
+                canDeleteRow = row == l - 1 and l > 1
+                def cb(n):
+                    if n == 0: self.io.song.setLength(l - 1)
+                    else: self.io.song.setRowDuration(row, n)
+                self.io.setLPController(NumberSelectController(self, cb, self.io.song.getRowDuration(row), int(not canDeleteRow), 64))
+            elif row == l:
+                self.io.song.setRow(l, self.io.song.getRow(l - 1))
+                self.io.song.setLength(l + 1)
             return
 
 
