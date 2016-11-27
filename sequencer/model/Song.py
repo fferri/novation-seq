@@ -133,7 +133,6 @@ class Song(object):
             r = track.tick(self.currentRow)
             if not track.muted:
                 output[trackIndex] = r
-                track.activeNotes.track(r)
 
         self.currentTick += 1
         if self.currentTick >= self.rowDuration[self.currentRow] * self.tpb * 4:

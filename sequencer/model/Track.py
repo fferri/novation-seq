@@ -39,7 +39,9 @@ class Track(object):
             ret1 = pattern.tick()
             if ret1 is not None:
                 trackOutput[patternIndex] = ret1
-        return self.outputMerger.merge(songRow, self.playingPatterns, trackOutput)
+        ret = self.outputMerger.merge(songRow, self.playingPatterns, trackOutput)
+        self.activeNotes.track(ret)
+        return ret
 
     def resetTick(self, songRow=None):
         if songRow is None:
