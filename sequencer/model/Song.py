@@ -13,6 +13,8 @@ class Song(object):
         self.data = defaultdict(lambda: defaultdict(lambda: set()))
         self.observers = weakref.WeakKeyDictionary()
         self.maxPatternPolyphony = 8
+        self.tpb = 4
+        self.bpm = 120
 
     def addObserver(self, callable_):
         self.observers[callable_] = 1
@@ -149,4 +151,10 @@ class Song(object):
             for patternIndex, pattern in enumerate(track.patterns):
                 d.append(pattern.dump())
         return '\n'.join(d)
+
+    def setTicksPerBeat(self, tpb):
+        self.tpb = max(1, tpb)
+
+    def setBeatsPerMinute(self, bpm):
+        self.bpm = max(1, bpm)
 
