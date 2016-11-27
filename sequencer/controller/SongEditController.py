@@ -1,5 +1,5 @@
 from LPController import *
-from PatternSelectController import *
+from SongPatternsSelectController import *
 from NumberSelectController import *
 
 class SongEditController(LPController):
@@ -13,10 +13,12 @@ class SongEditController(LPController):
         return '{}(parent={})'.format(self.__class__.__name__, self.parent)
 
     def onCurrentRowChange(self, row):
-        self.update()
+        if self.io.isActiveController(self):
+            self.update()
 
     def onSongChange(self):
-        self.update()
+        if self.io.isActiveController(self):
+            self.update()
 
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
@@ -26,11 +28,13 @@ class SongEditController(LPController):
         for row in range(self.io.song.getLength()):
             curRow = row == self.io.song.currentRow
             for trackIndex, track in enumerate(self.io.song.tracks):
-                v = self.io.song.get(row, trackIndex)
-                c = [0, 0] if v == -1 else [2, 2] if curRow else [0, 3]
+                empty = self.io.song.isEmpty(row, trackIndex)
+                c = [0, 0] if empty else [2, 2] if curRow else [0, 3]
                 self.io.launchpad.set('default', 'center', row, trackIndex, *c)
             self.io.launchpad.set('default', 'right', row, 8, 3 * int(curRow), 1)
         self.io.launchpad.set('default', 'top', 8, 4, 2, 2)
+        self.io.launchpad.set('default', 'top', 8, 0, 0, 1)
+        self.io.launchpad.set('default', 'top', 8, 1, 0, 1)
         if sync:
             self.io.launchpad.syncBuffer('default')
 
@@ -41,11 +45,8 @@ class SongEditController(LPController):
         if buf != 'default':
             return
         if section == 'center':
-            self.editingRow = row
-            self.editingTrack = col
-            v = self.io.song.get(row, col)
-            cb = lambda trkIdx, patIdx: self.io.song.set(self.editingRow, trkIdx, patIdx)
-            self.io.setLPController(PatternSelectController(self, self.editingTrack, cb, v, True, listenToTrackStatusChange=False))
+            self.io.song.tracks[col].activate()
+            self.io.setLPController(SongPatternsSelectController(self, row))
         elif section == 'top' and row == 8:
             if col in range(2):
                 self.vscroll += int(col == 1) - int(col == 0)

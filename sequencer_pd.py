@@ -86,6 +86,9 @@ class IO(pyext._class):
         self.lkcontroller = c
         self.lkcontroller.update()
 
+    def isActiveController(self, controller):
+        return controller in (self.lpcontroller, self.lkcontroller)
+
     def writeMidi(self, v1, v2, v3):
         for v in (v1, v2, v3):
             self._outlet(1, ['midi', self.midiOutPort, v])

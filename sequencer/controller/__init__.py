@@ -8,4 +8,5 @@ from PatternEditController import *
 from PatternEditNoteController import *
 from PatternSelectController import *
 from SongEditController import *
+from SongPatternsSelectController import *
 from TracksController import *

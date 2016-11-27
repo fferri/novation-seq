@@ -1,28 +1,27 @@
 from LPController import *
 
-class PatternSelectController(LPController):
-    def __init__(self, parent, trackIndex):
+class SongPatternsSelectController(LPController):
+    def __init__(self, parent, songRow):
         self.parent = parent
         self.io = self.parent.io
+        self.songRow = songRow
         self.track = self.io.song.activeTrack
         self.trackIndex = self.track.trackIndex
-        self.patternIndex = self.track.lastSelectedPatternIndex
+        self.io.song.addObserver(self)
         for track in self.io.song.tracks:
             track.addObserver(self)
         for pattern in self.track.patterns:
             pattern.addObserver(self)
 
     def __str__(self):
-        return '{}(parent={})'.format(self.__class__.__name__, self.parent)
-
-    def selectPattern(self, patternIndex):
-        # called from a onButtonPress handler
-        self.parent.selectPattern(self.trackIndex, patternIndex)
+        return '{}(parent={}, songRow={})'.format(self.__class__.__name__, self.parent, self.songRow)
 
     def selectTrack(self, trackIndex):
         self.trackIndex = trackIndex
         self.track = self.io.song.tracks[self.trackIndex]
-        self.patternIndex = self.track.lastSelectedPatternIndex
+        self.update()
+
+    def onSongChange(self):
         self.update()
 
     def onPatternChange(self, trackIndex, patternIndex):
@@ -35,31 +34,28 @@ class PatternSelectController(LPController):
 
     def update(self, sync=True):
         self.io.launchpad.clearBuffer('default')
-        self.io.launchpad.set('default', 'top', 8, 5, 0, 1)
+        self.io.launchpad.set('default', 'right', 7, 8, 0, 1)
         for patternIndex in range(64):
             row, col = patternIndex / 8, patternIndex % 8
             pattern = self.track.patterns[patternIndex]
             empty = pattern.isEmpty()
-            cur = patternIndex == self.patternIndex
-            color = [2, 0] if cur else [0, 1] if empty else [2, 3]
+            selected = self.io.song.contains(self.songRow, self.trackIndex, patternIndex)
+            color = [2, 0] if selected else [0, 1] if empty else [2, 3]
             self.io.launchpad.set('default', 'center', row, col, *color)
         if sync:
             self.io.launchpad.syncBuffer('default')
 
     def onLPButtonPress(self, buf, section, row, col):
-        super(PatternSelectController, self).onLPButtonPress(buf, section, row, col)
+        super(SongPatternsSelectController, self).onLPButtonPress(buf, section, row, col)
         buf = str(buf)
         section = str(section)
         if buf != 'default':
             return
         if section == 'center':
             patternIndex = row * 8 + col
-            #self.parent.selectPattern(self.trackIndex, patternIndex, update=False)
-            self.selectPattern(patternIndex)
-            self.io.setLPController(self.parent)
+            self.io.song.toggle(self.songRow, self.trackIndex, patternIndex)
             pass
-        elif section == 'top' and row == 8:
-            if col == 5:
-                self.io.setLPController(self.parent)
-                return
+        elif section == 'right' and col == 8 and row ==7:
+            self.io.setLPController(self.parent)
+            return
 

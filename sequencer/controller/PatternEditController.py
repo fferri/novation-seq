@@ -29,6 +29,7 @@ class PatternEditController(PatternController, LKController):
                 self.scaleColor.append(color)
         self.scales.append(NoteMapping(enumerate(scales.drum8()), 8))
         self.scaleColor.append([3, 1])
+        self.selectPattern(trackIndex, patternIndex)
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
@@ -107,7 +108,7 @@ class PatternEditController(PatternController, LKController):
 
     def setScale(self, i):
         # try to maintain scroll (i.e. see the same note) after changing scale:
-        # (if the scale is very nonlinear this isn't going to work very well)
+        # FIXME: doesn't work very well
         getVisibleNotes = lambda row0: [self.row2note(row0 + r) for r in range(8)]
         visibleNotes = getVisibleNotes(self.scroll[self.trackIndex][0])
         # change scale
@@ -212,9 +213,7 @@ class PatternEditController(PatternController, LKController):
             self.io.setLPController(SongEditController(self))
             return
         if section == 'top' and row == 8 and col == 5 and not self.shift:
-            cb = lambda trkIdx, patIdx: self.selectPattern(trkIdx, patIdx, True)
-            v = self.track.lastSelectedPatternIndex
-            self.io.setLPController(PatternSelectController(self, self.trackIndex, cb, v, False))
+            self.io.setLPController(PatternSelectController(self, self.trackIndex))
             return
         if section == 'top' and row == 8 and col == 4 and self.shift:
             self.shift = False # otherwise shift gets stuck

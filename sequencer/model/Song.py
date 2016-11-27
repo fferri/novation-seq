@@ -12,8 +12,9 @@ class Song(object):
         self.playHeads = {}
         self.playHeadsPrev = {}
         self.length = 1
-        self.data = defaultdict(lambda: defaultdict(lambda: -1))
+        self.data = defaultdict(lambda: defaultdict(lambda: set()))
         self.observers = weakref.WeakKeyDictionary()
+        self.maxPatternPolyphony = 8
 
     def addObserver(self, callable_):
         self.observers[callable_] = 1
@@ -32,22 +33,53 @@ class Song(object):
             observer.onCurrentRowChange(self.currentRow)
 
     def get(self, row, col):
-        return self.data[row][col]
+        flatSet = [-1] * self.maxPatternPolyphony
+        for i, el in self.data[row][col]:
+            flatSet[i] = el
+        return flatSet
 
-    def set(self, row, col, value, notify=True):
-        if value == -1:
-            del self.data[row][col]
+    def contains(self, row, col, item):
+        return item in self.data[row][col]
+
+    def isEmpty(self, row, col):
+        return len(self.data[row][col]) == 0
+
+    def set(self, row, col, items, notify=True):
+        items = set(list(set(item for item in items if item != -1))[:self.maxPatternPolyphony])
+        if items != self.data[row][col]:
+            self.data[row][col] = set(items)
+            if notify: self.notifySongChange()
+
+    def add(self, row, col, item, notify=True):
+        if len(self.data[row][col]) < self.maxPatternPolyphony and item not in self.data[row][col]:
+            self.data[row][col].add(item)
+            if notify: self.notifySongChange()
+
+    def remove(self, row, col, item, notify=True):
+        if item in self.data[row][col]:
+            self.data[row][col].remove(item)
+            if notify: self.notifySongChange()
+
+    def toggle(self, row, col, item, notify=True):
+        if item in self.data[row][col]:
+            self.remove(row, col, item, notify)
         else:
-            self.data[row][col] = value
-        if notify: self.notifySongChange()
+            self.add(row, col, item, notify)
 
     def getRow(self, row):
-        ncols = max(self.data[row]) if len(self.data[row]) else 0
-        return [self.get(row, col) for col in range(1 + ncols)]
+        ret = []
+        for trackIndex, track in enumerate(self.tracks):
+            ret.extend(self.get(row, trackIndex))
+        return ret
 
     def setRow(self, row, values, notify=True):
-        for col, value in enumerate(values):
-            self.set(row, col, value, notify=False)
+        l = len(self.tracks) * self.maxPatternPolyphony
+        if len(values) != l:
+            raise ValueError('values must have %d elements' % l)
+        for trackIndex, track in enumerate(self.tracks):
+            start = trackIndex * self.maxPatternPolyphony
+            end = (trackIndex + 1) * self.maxPatternPolyphony
+            self.set(row, trackIndex, values[start:end], notify=False)
         if notify: self.notifySongChange()
 
     def clear(self, notify=True):
@@ -79,8 +111,12 @@ class Song(object):
 
     def getRowModulo(self, row):
         from fractions import gcd
-        pl = [1] + [t.patterns[pi].getLength() for t, pi in zip(self.tracks, self.getRow(row))]
-        return reduce(gcd,pl)
+        # get patterns playing in every track:
+        pats = []
+        for trackIndex, track in enumerate(self.tracks):
+            for patternIndex in self.get(row, trackIndex):
+                pats.append(track.patterns[patternIndex])
+        return reduce(gcd, [1] + [pat.getLength() for pat in pats])
 
     def incrTick(self):
         self.currentTick += 1
