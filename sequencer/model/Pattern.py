@@ -165,7 +165,15 @@ class Pattern(object):
         if notify: self.notifyPatternChange()
 
     def clear(self, notify=True):
-        rows = tuple(self.data.keys())
+        self.clearRows(self.data.keys(), notify)
+
+    def clearRowRange(self, startRow, endRow=None, notify=True):
+        if endRow is None:
+            self.clearRows([row for row in self.data.keys() if row >= startRow], notify)
+        else:
+            self.clearRows(range(startRow, 1 + endRow), notify)
+
+    def clearRows(self, rows, notify=True):
         for row in rows:
             del self.data[row]
         if notify: self.notifyPatternChange()
@@ -176,9 +184,7 @@ class Pattern(object):
     def setLength(self, length, notify=True):
         oldLength = self.length
         self.length = length
-        # remove rows beyond length:
-        rowsToDelete = [row for row in self.data if row >= length]
-        for row in rowsToDelete: del self.data[row]
+        self.clearRowRange(length, None, False)
         if self.length > oldLength:
             # repeat data to fill empty region of pattern:
             for srcRow in range(self.length):
