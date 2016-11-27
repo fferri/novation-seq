@@ -12,6 +12,19 @@ class SongEditController(LPController):
     def __str__(self):
         return '{}(parent={})'.format(self.__class__.__name__, self.parent)
 
+    def setVScroll(self, rowOffset):
+        l = self.io.song.getLength()
+        self.vscroll = max(0, min(max(0, l - 8), rowOffset))
+
+    def incrVScroll(self, deltaRowOffset):
+        self.setVScroll(self.vscroll + deltaRowOffset)
+
+    def rowDown(self):
+        self.incrVScroll(1)
+
+    def rowUp(self):
+        self.incrVScroll(-1)
+
     def onCurrentRowChange(self, row):
         if self.io.isActiveController(self):
             self.update()
@@ -49,7 +62,8 @@ class SongEditController(LPController):
             self.io.setLPController(SongPatternsSelectController(self, row))
         elif section == 'top' and row == 8:
             if col in range(2):
-                self.vscroll += int(col == 1) - int(col == 0)
+                if col == 0: self.rowUp()
+                if col == 1: self.rowDown()
                 self.io.launchpad.scroll('default', 'center', self.vscroll, 0)
                 self.io.launchpad.scroll('default', 'right', self.vscroll, 0)
                 self.io.launchpad.syncBuffer('default')
