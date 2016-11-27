@@ -30,6 +30,7 @@ class PatternEditController(PatternController, LKController):
         self.scales.append(NoteMapping(enumerate(scales.drum8()), 8))
         self.scaleColor.append([3, 1])
         self.selectPattern(trackIndex, patternIndex)
+        self.io.transport.addObserver(self)
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
@@ -106,6 +107,10 @@ class PatternEditController(PatternController, LKController):
         if self.trackIndex == trackIndex and self.patternIndex == patternIndex:
             self.io.lpcontroller.update()
 
+    def onPlaybackStatusChange(self, playing):
+        if self.io.isActiveController(self):
+            if not playing: self.update()
+
     def setScale(self, i):
         # try to maintain scroll (i.e. see the same note) after changing scale:
         # FIXME: doesn't work very well
@@ -150,7 +155,7 @@ class PatternEditController(PatternController, LKController):
         self.io.launchpad.scroll('default','right', self.scroll[self.trackIndex][0], 0)
 
         # draw playhead
-        if self.pattern.playHeadRow >= 0:
+        if self.io.transport.isPlaying():
             for row in range(128):
                 self.io.launchpad.set('default', 'center', row, self.pattern.playHeadRow, 1, 0)
 
