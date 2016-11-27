@@ -155,8 +155,14 @@ class Song(object):
                 d.append(pattern.dump())
         return '\n'.join(d)
 
+    def getTicksPerBeat(self):
+        return self.tpb
+
     def setTicksPerBeat(self, tpb):
         self.tpb = max(1, tpb)
+
+    def getBeatsPerMinute(self):
+        return self.bpm
 
     def setBeatsPerMinute(self, bpm):
         self.bpm = max(1, bpm)

@@ -65,8 +65,6 @@ class IO(pyext._class):
         self.lkcontroller = TracksController(self)
         self.midiBuffer = {}
         self.playing = False
-        self.tpb = 4
-        self.bpm = 120
 
     def init_1(self):
         self.launchpad.reset()
@@ -109,7 +107,7 @@ class IO(pyext._class):
         self.song.setBeatsPerMinute(bpm)
 
     def tickPeriod(self):
-        return 60000. / self.tpb / self.bpm / 4.
+        return 60000. / self.song.getTicksPerBeat() / self.song.getBeatsPerMinute() / 4.
 
     def start_1(self):
         self.playing = True
