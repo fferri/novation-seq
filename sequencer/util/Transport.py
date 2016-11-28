@@ -13,8 +13,7 @@ class Transport(object):
         if callable_ in self.observers: del self.observers[callable_]
 
     def notifyPlaybackStatusChange(self):
-        self.io.onPlaybackStatusChange(self.playing)
-        observers = list(self.observers.keys())
+        observers = [self.io] + list(self.observers.keys())
         for observer in observers:
             observer.onPlaybackStatusChange(self.playing)
 
