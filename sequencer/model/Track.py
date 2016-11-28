@@ -30,7 +30,11 @@ class Track(object):
             observer.onTrackStatusChange(self.trackIndex, self.volume, self.muted, self.isActive())
 
     def setPlayingPatterns(self, patterns):
+        prev = set(self.playingPatterns)
         self.playingPatterns = [p for p in patterns if p != -1]
+        cur = set(self.playingPatterns)
+        for patternIndex in prev - cur:
+            self.patterns[patternIndex].resetTick()
 
     def tick(self, songRow):
         trackOutput = {}
