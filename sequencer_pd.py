@@ -49,7 +49,7 @@ class LaunchkeyImpl(Launchkey):
         for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
             if isinstance(controller, LKController):
                 if pressed: controller.onButtonPress(buttonName)
-                else: controller.onButtonPress(buttonName)
+                else: controller.onButtonRelease(buttonName)
 
 class IO(pyext._class):
     _inlets = 1
