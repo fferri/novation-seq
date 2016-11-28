@@ -1,6 +1,7 @@
 from LPController import *
+from LKController import *
 
-class SongPatternsSelectController(LPController):
+class SongPatternsSelectController(LPController, LKController):
     def __init__(self, parent, songRow):
         self.parent = parent
         self.io = self.parent.io
@@ -16,10 +17,20 @@ class SongPatternsSelectController(LPController):
     def __str__(self):
         return '{}(parent={}, songRow={})'.format(self.__class__.__name__, self.parent, self.songRow)
 
+    def selectRow(self, row):
+        self.songRow = max(0, min(self.io.song.getLength() - 1, row))
+        self.update()
+
     def selectTrack(self, trackIndex):
         self.trackIndex = trackIndex
         self.track = self.io.song.tracks[self.trackIndex]
         self.update()
+
+    def prevRow(self):
+        self.selectRow(self.songRow - 1)
+
+    def nextRow(self):
+        self.selectRow(self.songRow + 1)
 
     def onSongChange(self):
         self.update()
@@ -57,5 +68,13 @@ class SongPatternsSelectController(LPController):
             pass
         elif section == 'right' and col == 8 and row ==7:
             self.io.setLPController(self.parent)
+            return
+
+    def onButtonPress(self, buttonName):
+        if buttonName == 'track-up':
+            self.prevRow()
+            return
+        if buttonName == 'track-down':
+            self.nextRow()
             return
 
