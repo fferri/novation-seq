@@ -31,6 +31,7 @@ class PatternEditController(PatternController, LKController):
         self.scaleColor.append([3, 1])
         self.selectPattern(trackIndex, patternIndex)
         self.io.transport.addObserver(self)
+        self.track.activeNotes.addObserver(self)
 
     def __str__(self):
         return '{}(trackIndex={}, patternIndex={})'.format(self.__class__.__name__, self.trackIndex, self.patternIndex)
@@ -110,6 +111,10 @@ class PatternEditController(PatternController, LKController):
     def onPlaybackStatusChange(self, playing):
         if self.io.isActiveController(self):
             if not playing: self.update()
+
+    def onActiveNotes(self, notes):
+        if self.io.isActiveController(self):
+            self.update()
 
     def setScale(self, i):
         # try to maintain scroll (i.e. see the same note) after changing scale:

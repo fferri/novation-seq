@@ -20,3 +20,6 @@ class Controller(object):
     def onPlaybackStatusChange(self, playing):
         pass
 
+    def onActiveNotes(self, notes):
+        pass
+
