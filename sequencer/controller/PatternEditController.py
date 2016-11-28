@@ -45,7 +45,7 @@ class PatternEditController(PatternController, LKController):
             self.track = self.io.song.tracks[self.trackIndex]
             self.track.addObserver(self)
         self.pattern.removeObserver(self)
-        self.patternIndex = patternIndex
+        self.patternIndex = max(0, min(len(self.track.patterns) - 1, patternIndex))
         self.pattern = self.track.patterns[self.patternIndex]
         self.pattern.addObserver(self)
         self.track.lastSelectedPatternIndex = self.patternIndex
@@ -97,6 +97,12 @@ class PatternEditController(PatternController, LKController):
 
     def pageRight(self):
         self.incrHScroll(8)
+
+    def prevPattern(self):
+        self.selectPattern(self.trackIndex, self.patternIndex - 1)
+
+    def nextPattern(self):
+        self.selectPattern(self.trackIndex, self.patternIndex + 1)
 
     def onTrackStatusChange(self, trackIndex, volume, muted, active):
         if active == False:
@@ -252,6 +258,15 @@ class PatternEditController(PatternController, LKController):
         if section == 'top' and row == 8 and col == 7:
             self.shift = False
             self.update()
+            return
+
+    def onButtonPress(self, buttonName):
+        print('onButtonPress: %s' % buttonName)
+        if buttonName == 'track-left':
+            self.prevPattern()
+            return
+        if buttonName == 'track-right':
+            self.nextPattern()
             return
 
     def onNoteOn(self, note, velocity):
