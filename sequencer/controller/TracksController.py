@@ -31,8 +31,8 @@ class TracksController(LKController):
         elif row == 1 and col < 8:
             self.io.song.tracks[col].toggleMute()
         elif row == 1 and col == 8:
-            if self.io.transport.isPlaying(): self.io.stop_1()
-            else: self.io.start_1()
+            if self.io.transport.isPlaying(): self.io.transport.stop()
+            else: self.io.transport.start()
             self.update()
 
     def onControlChange(self, num, value):

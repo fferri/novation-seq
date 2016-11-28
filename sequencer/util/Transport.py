@@ -1,8 +1,7 @@
 import weakref
 
 class Transport(object):
-    def __init__(self, io):
-        self.io = io
+    def __init__(self):
         self.playing = False
         self.observers = weakref.WeakKeyDictionary()
 
@@ -13,7 +12,7 @@ class Transport(object):
         if callable_ in self.observers: del self.observers[callable_]
 
     def notifyPlaybackStatusChange(self):
-        observers = [self.io] + list(self.observers.keys())
+        observers = list(self.observers.keys())
         for observer in observers:
             observer.onPlaybackStatusChange(self.playing)
 

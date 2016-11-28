@@ -14,7 +14,7 @@ class LaunchpadImpl(BufferedLaunchpad):
             self.pdobj._outlet(1, ['midi', self.pdobj.launchpadPort, v])
 
     def onBufferButtonEvent(self, buf, section, row, col, pressed):
-        for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
+        for controller in (self.pdobj.app.lpcontroller, self.pdobj.app.lkcontroller):
             if isinstance(controller, LPController):
                 if pressed: controller.onLPButtonPress(buf, section, row, col)
                 else: controller.onLPButtonRelease(buf, section, row, col)
@@ -29,50 +29,50 @@ class LaunchkeyImpl(Launchkey):
             self.pdobj._outlet(1, ['midi', self.pdobj.launchkeyPorts[port], v])
 
     def onNoteEvent(self, note, velocity):
-        for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
+        for controller in (self.pdobj.app.lpcontroller, self.pdobj.app.lkcontroller):
             if isinstance(controller, LKController):
                 if velocity > 0: controller.onNoteOn(note, velocity)
                 else: controller.onNoteOff(note)
 
     def onPadEvent(self, row, col, velocity):
-        for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
+        for controller in (self.pdobj.app.lpcontroller, self.pdobj.app.lkcontroller):
             if isinstance(controller, LKController):
                 if velocity > 0: controller.onPadPress(row, col, velocity)
                 else: controller.onPadRelease(row, col, velocity)
 
     def onControlEvent(self, num, value):
-        for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
+        for controller in (self.pdobj.app.lpcontroller, self.pdobj.app.lkcontroller):
             if isinstance(controller, LKController):
                 controller.onControlChange(num, value)
 
     def onButtonEvent(self, buttonName, pressed):
-        for controller in (self.pdobj.lpcontroller, self.pdobj.lkcontroller):
+        for controller in (self.pdobj.app.lpcontroller, self.pdobj.app.lkcontroller):
             if isinstance(controller, LKController):
                 if pressed: controller.onButtonPress(buttonName)
                 else: controller.onButtonRelease(buttonName)
 
-class IO(pyext._class):
-    _inlets = 1
-    _outlets = 1
-
-    def __init__(self, launchpadPort, launchkeyPort, launchkeyCtrlPort, midiOutPort):
-        self.launchpadPort = launchpadPort
-        self.launchkeyPorts = (launchkeyPort, launchkeyCtrlPort)
-        self.midiOutPort = midiOutPort
+class Application(object):
+    def __init__(self, pdobj):
+        self.pdobj = pdobj
         self.song = Song()
-        self.transport = Transport(self)
-        self.launchpad = LaunchpadImpl(self)
-        self.launchkey = LaunchkeyImpl(self)
+        self.transport = Transport()
+        self.launchpad = LaunchpadImpl(pdobj)
+        self.launchkey = LaunchkeyImpl(pdobj)
         self.lpcontroller = PatternEditController(self, 0, 0)
         self.lkcontroller = TracksController(self)
-        self.midiBuffer = {}
+        for track in self.song.tracks:
+            track.addObserver(self)
+        self.transport.addObserver(self)
 
-    def init_1(self):
+    def initDevices(self):
         self.launchpad.reset()
         self.launchkey.reset()
         self.launchkey.setExtendedMode(True)
         self.lpcontroller.update()
         self.lkcontroller.update()
+
+    def writeMidi(self, v1, v2, v3):
+        self.pdobj.writeMidi(v1, v2, v3)
 
     def setLPController(self, c):
         self.lpcontroller = c
@@ -84,6 +84,45 @@ class IO(pyext._class):
 
     def isActiveController(self, controller):
         return controller in (self.lpcontroller, self.lkcontroller)
+
+    def onTrackStatusChange(self, trackIndex, volume, muted, isActive):
+        self.pdobj._outlet(1, ['volume', trackIndex, 0 if muted else volume])
+
+    def onPlaybackStatusChange(self, playing):
+        if playing:
+            self.pdobj._outlet(1, ['delaytick', self.tickPeriod()])
+        else:
+            self.song.resetTick()
+
+    def tickPeriod(self):
+        return 60000. / self.song.getTicksPerBeat() / self.song.getBeatsPerMinute() / 4.
+
+class IO(pyext._class):
+    _inlets = 1
+    _outlets = 1
+
+    def __init__(self, launchpadPort, launchkeyPort, launchkeyCtrlPort, midiOutPort):
+        self.launchpadPort = launchpadPort
+        self.launchkeyPorts = (launchkeyPort, launchkeyCtrlPort)
+        self.midiOutPort = midiOutPort
+        self.midiBuffer = {}
+        self.app = Application(self)
+        self.song = self.app.song
+        self.transport = self.app.transport
+        self.launchkey = self.app.launchkey
+        self.launchpad = self.app.launchpad
+
+    def init_1(self):
+        self.app.initDevices()
+
+    def setLPController(self, c):
+        self.app.setLPController(c)
+
+    def setLKController(self, c):
+        self.app.setLKController(c)
+
+    def isActiveController(self, controller):
+        return self.app.isActiveController(controller)
 
     def writeMidi(self, v1, v2, v3):
         for v in (v1, v2, v3):
@@ -107,9 +146,6 @@ class IO(pyext._class):
     def setbeatsperminute_1(self, bpm):
         self.song.setBeatsPerMinute(bpm)
 
-    def tickPeriod(self):
-        return 60000. / self.song.getTicksPerBeat() / self.song.getBeatsPerMinute() / 4.
-
     def start_1(self):
         self.transport.start()
 
@@ -119,13 +155,7 @@ class IO(pyext._class):
     def delayedtick_1(self):
         if self.transport.isPlaying():
             self.tick_1()
-            self._outlet(1, ['delaytick', self.tickPeriod()])
-
-    def onPlaybackStatusChange(self, playing):
-        if playing:
-            self._outlet(1, ['delaytick', self.tickPeriod()])
-        else:
-            self.song.resetTick()
+            self._outlet(1, ['delaytick', self.app.tickPeriod()])
 
     def songgetrowduration_1(self, row):
         self._outlet(1, ['rowduration', row, self.song.getRowDuration(row)])
